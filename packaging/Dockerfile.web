@@ -1,0 +1,17 @@
+# Web-only releases preserve the base image's published Agent artifacts and backend.
+# BASE_IMAGE must identify the currently deployed, verified release image.
+ARG BASE_IMAGE
+FROM node:24-bookworm-slim AS web-build
+WORKDIR /build/apps/web
+COPY apps/web/package.json apps/web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY apps/web/ ./
+RUN npm run build
+
+FROM ${BASE_IMAGE}
+ARG AGENTFLEET_BUILD_SHA=unknown
+ENV AGENTFLEET_BUILD_SHA=${AGENTFLEET_BUILD_SHA}
+# Drop obsolete browser bundles, which can contain superseded deployment defaults.
+# Published Agent downloads and backend files remain intact.
+RUN rm -rf /app/web/assets
+COPY --from=web-build --chown=agentfleet:agentfleet /build/apps/web/dist/ /app/web/

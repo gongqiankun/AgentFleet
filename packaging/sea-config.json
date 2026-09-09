@@ -1,0 +1,7 @@
+{
+  "main": "build/agentfleet.cjs",
+  "output": "build/agentfleet.blob",
+  "disableExperimentalSEAWarning": true,
+  "useSnapshot": false,
+  "useCodeCache": false
+}

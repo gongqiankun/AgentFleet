@@ -1,0 +1,8 @@
+# Add a new Agent release to a built control-plane image, preserving every
+# previously published Agent/Codex artifact and the Codex release manifest.
+ARG AGENT_RELEASE_IMAGE
+ARG CONTROL_PLANE_IMAGE
+FROM ${AGENT_RELEASE_IMAGE} AS agent-release
+FROM ${CONTROL_PLANE_IMAGE}
+COPY --from=agent-release --chown=agentfleet:agentfleet /build/release/agentfleet-* /app/web/downloads/
+COPY --from=agent-release --chown=agentfleet:agentfleet /build/release/manifest.json /app/web/downloads/manifest.json

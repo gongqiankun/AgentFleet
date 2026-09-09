@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            apps/control-plane/package-lock.json
+            apps/local-agent/package-lock.json
+            apps/web/package-lock.json
+      - run: npm ci --prefix apps/control-plane --no-audit --no-fund
+      - run: npm ci --prefix apps/local-agent --no-audit --no-fund
+      - run: npm ci --prefix apps/web --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - name: Build and verify self-contained Local Agent release
+        run: |
+          npm run build:agent-release
+          artifact="$(node -p "require('./release/manifest.json').artifacts['linux-x64'].file")"
+          format="$(node -p "require('./release/manifest.json').artifacts['linux-x64'].format")"
+          version="$(node -p "require('./release/manifest.json').version")"
+          (cd release && sha256sum -c "$artifact.sha256")
+          manifest_sha="$(node -p "require('./release/manifest.json').artifacts['linux-x64'].sha256")"
+          test "$(sha256sum "release/$artifact" | cut -d ' ' -f 1)" = "$manifest_sha"
+          if [ "$format" = sea ]; then
+            test -x "release/$artifact"
+            test "$("release/$artifact" --version)" = "$version"
+          else
+            mkdir release/smoke
+            tar -xzf "release/$artifact" -C release/smoke
+            test "$(release/smoke/agentfleet/agentfleet --version)" = "$version"
+          fi
+      - name: Smoke-test installer without Node/npm on the target
+        run: .github/scripts/smoke-install.sh
+      - name: Smoke-test root installation mode
+        run: docker run --rm -v "$PWD:/workspace" -w /workspace node:24-bookworm .github/scripts/smoke-install.sh
+      - name: Verify immutable release and install semantics
+        run: packaging/test-immutability.sh
+      - run: docker build -t agentfleet:ci .
+      - name: Verify release files in the production image
+        run: |
+          docker run --rm --entrypoint sh agentfleet:ci -c '
+            set -eu
+            test -x /app/web/install
+            cd /app/web/downloads
+            artifact=$(node -p "require(\"./manifest.json\").artifacts[\"linux-x64\"].file")
+            test -f "$artifact"
+            test -f "$artifact.sha256"
+            sha256sum -c "$artifact.sha256"
+          '

@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+import { buildControlPlane } from "../src/server.js";
+import { loadConfig } from "../src/config.js";
+import { channelControl } from "../src/runtime-channel.js";
+test("runtime channel controls require login and CSRF; absent targets never become a forced upgrade", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "runtime-channel-api-"));
+  const config = loadConfig({ ADMIN_EMAIL: "runtime@example.test", ADMIN_PASSWORD: "runtime-channel-test-password", PUBLIC_ORIGIN: "http://runtime.test", COOKIE_SECURE: "false", DATABASE_PATH: join(directory, "test.sqlite"), RUNTIME_RELEASE_DIR: join(directory, "channel"), LOG_LEVEL: "silent" });
+  const { app } = await buildControlPlane(config);
+  t.after(async () => { await app.close(); await rm(directory, { recursive: true, force: true }); });
+  assert.equal((await app.inject({ method: "GET", url: "/api/runtime-release" })).statusCode, 401);
+  assert.deepEqual((await app.inject({ method: "GET", url: "/api/runtime-release/target" })).json(), { target: null });
+  const login = await app.inject({ method: "POST", url: "/api/auth/login", headers: { origin: config.publicOrigin }, payload: { email: config.adminEmail, password: config.adminPassword } });
+  const cookie = String(login.headers["set-cookie"]).split(";")[0]!;
+  const base = { method: "POST" as const, url: "/api/runtime-release/control", payload: { action: "pause" } };
+  assert.equal((await app.inject({ ...base, headers: { origin: config.publicOrigin, cookie } })).statusCode, 403);
+  const headers = { origin: config.publicOrigin, cookie, "x-csrf-token": login.json().csrfToken };
+  assert.equal((await app.inject({ ...base, headers })).statusCode, 200);
+  assert.equal(channelControl(config.runtimeReleaseDir!).paused, true);
+  assert.equal((await app.inject({ ...base, headers, payload: { action: "check" } })).statusCode, 409);
+  assert.equal((await app.inject({ ...base, headers, payload: { action: "rollback" } })).statusCode, 409);
+  assert.equal((await app.inject({ ...base, headers, payload: { action: "resume" } })).statusCode, 200);
+  assert.equal(channelControl(config.runtimeReleaseDir!).paused, false);
+  assert.equal((await app.inject({ method: "GET", url: "/downloads/managed-codex/control.json" })).statusCode, 404);
+});

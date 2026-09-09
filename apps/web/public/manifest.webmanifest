@@ -1,0 +1,19 @@
+{
+  "name": "AgentFleets for Codex",
+  "short_name": "AgentFleets",
+  "description": "你的 Codex 主机控制面",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070c17",
+  "theme_color": "#070c17",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

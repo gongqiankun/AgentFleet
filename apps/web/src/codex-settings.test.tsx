@@ -1,0 +1,84 @@
+// @vitest-environment jsdom
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { CodexSettingsPanel } from "./components/CodexSettingsPanel";
+import { api } from "./lib/api";
+import type { CodexPreferences } from "./lib/codex-settings";
+import { parseCodexCommand } from "./lib/codex-commands";
+vi.mock("./lib/api", () => ({ api: { codexPreferences: vi.fn(), saveCodexPreferences: vi.fn(), machineCodexPreferences: vi.fn(), saveMachineCodexPreferences: vi.fn() } }));
+const fixture: CodexPreferences = { catalog: { models: [{ model: "host-model", displayName: "Host model", efforts: ["low", "high"], defaultEffort: "low" }], modes: ["default"], fetchedAt: "2026-09-05T00:00:00Z" }, preferences: { machine: { settings: { model: "host-model", effort: "low" }, revision: 2 }, project: { settings: null, revision: 0 }, session: { settings: null, revision: 0 } }, source: "machine", desired: { model: "host-model", effort: "low" } };
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
+it("configures a host directly without requiring a session and isolates host switches", async () => {
+  vi.mocked(api.machineCodexPreferences).mockResolvedValue(fixture);
+  vi.mocked(api.saveMachineCodexPreferences).mockResolvedValue(fixture);
+  const { rerender } = render(<CodexSettingsPanel machineId="host-a" />);
+  expect(screen.getByRole("region", { name: "主机默认配置" })).toBeTruthy();
+  await screen.findByLabelText("主机默认模型");
+  expect(api.codexPreferences).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText("配置保存范围")).toBeNull();
+  fireEvent.change(screen.getByLabelText("推理强度"), { target: { value: "high" } });
+  fireEvent.click(screen.getByRole("button", { name: "保存主机默认配置" }));
+  await waitFor(() => expect(api.saveMachineCodexPreferences).toHaveBeenCalledWith("host-a", { settings: { model: "host-model", effort: "high" }, revision: 2 }));
+  rerender(<CodexSettingsPanel machineId="host-b" />);
+  await waitFor(() => expect(api.machineCodexPreferences).toHaveBeenLastCalledWith("host-b", expect.any(AbortSignal)));
+});
+it("a session has editable options and can restore inheritance", async () => {
+  vi.mocked(api.codexPreferences).mockResolvedValue({ ...fixture, source: "session", desired: { model: "host-model", effort: "high" }, preferences: { ...fixture.preferences, session: { settings: { model: "host-model", effort: "high" }, revision: 3 } } });
+  vi.mocked(api.saveCodexPreferences).mockResolvedValue(fixture);
+  render(<CodexSettingsPanel sessionId="s" onChange={vi.fn()} />);
+  fireEvent.click(screen.getByText(/运行配置/));
+  await screen.findByLabelText("会话模型");
+  expect((screen.getByLabelText("推理强度") as HTMLSelectElement).value).toBe("high");
+  expect(screen.getByLabelText("协作模式")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "恢复继承（清除此范围覆盖）" }));
+  await waitFor(() => expect(api.saveCodexPreferences).toHaveBeenCalledWith("s", { scope: "session", settings: null, revision: 3 }));
+  await waitFor(() => expect((screen.getByLabelText("推理强度") as HTMLSelectElement).value).toBe("low"));
+});
+it("selects advertised tier and personality, preserving explicit default-tier reset", async () => {
+  vi.mocked(api.codexPreferences).mockResolvedValue({ ...fixture, catalog: { ...fixture.catalog!, models: [{ ...fixture.catalog!.models[0], serviceTiers: [{ id: "fast", name: "Fast" }], supportsPersonality: true }] } });
+  const changed = vi.fn(); render(<CodexSettingsPanel sessionId="s" onChange={changed} />);
+  fireEvent.click(screen.getByText(/运行配置/));
+  await screen.findByRole("option", { name: "Fast" });
+  fireEvent.change(screen.getByLabelText("服务档位"), { target: { value: "fast" } });
+  fireEvent.change(screen.getByLabelText("沟通风格"), { target: { value: "pragmatic" } });
+  expect(changed).toHaveBeenLastCalledWith({ sessionId: "s", settings: { model: "host-model", effort: "low", serviceTier: "fast", personality: "pragmatic" } });
+  fireEvent.change(screen.getByLabelText("服务档位"), { target: { value: "__default" } });
+  expect(changed).toHaveBeenLastCalledWith({ sessionId: "s", settings: { model: "host-model", effort: "low", serviceTier: null, personality: "pragmatic" } });
+});
+it("uses host catalog and saves a revisioned scoped preference without claiming native application", async () => {
+  vi.mocked(api.codexPreferences).mockResolvedValue(fixture);
+  vi.mocked(api.saveCodexPreferences).mockResolvedValue({ ...fixture, source: "session", desired: { model: "host-model", effort: "high" } });
+  const changed = vi.fn(); render(<CodexSettingsPanel sessionId="s" onChange={changed} />);
+  fireEvent.click(screen.getByText(/运行配置/));
+  await screen.findByRole("option", { name: "Host model" });
+  fireEvent.change(screen.getByLabelText("推理强度"), { target: { value: "high" } });
+  expect(changed).toHaveBeenLastCalledWith({ sessionId: "s", settings: { model: "host-model", effort: "high" } });
+  expect(api.saveCodexPreferences).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "保存为此会话配置" }));
+  await waitFor(() => expect(api.saveCodexPreferences).toHaveBeenCalledWith("s", { scope: "session", settings: { model: "host-model", effort: "high" }, revision: 0 }));
+  await screen.findByText(/面板配置已保存/);
+  expect(screen.queryByText(/主机上次接受/)).toBeNull();
+});
+it("late preference reads from a previous session cannot cross session boundaries", async () => {
+  let finish!: (value: CodexPreferences) => void;
+  vi.mocked(api.codexPreferences).mockImplementation((id) => id === "a" ? new Promise((resolve) => { finish = resolve; }) : Promise.resolve({ ...fixture, desired: null }));
+  const changed = vi.fn(); const { rerender } = render(<CodexSettingsPanel sessionId="a" onChange={changed} />);
+  await waitFor(() => expect(api.codexPreferences).toHaveBeenCalledTimes(1));
+  rerender(<CodexSettingsPanel sessionId="b" onChange={changed} />);
+  await waitFor(() => expect(changed).toHaveBeenLastCalledWith({ sessionId: "b", settings: undefined }));
+  await act(async () => finish(fixture));
+  expect(changed).toHaveBeenLastCalledWith({ sessionId: "b", settings: undefined });
+});
+it("missing catalog does not manufacture model choices", async () => {
+  vi.mocked(api.codexPreferences).mockResolvedValue({ ...fixture, catalog: null, desired: null });
+  render(<CodexSettingsPanel sessionId="s" onChange={vi.fn()} />);
+  fireEvent.click(screen.getByText(/运行配置/));
+  await screen.findByText(/此主机暂未提供可用模型列表/);
+  expect(screen.queryByLabelText("会话模型")).toBeNull();
+});
+it("slash parsing separates commands from file paths and ordinary prose", () => {
+  expect(parseCodexCommand("/plan build a report")).toEqual({ name: "plan", args: "build a report" });
+  expect(parseCodexCommand("/debug-config")).toEqual({ name: "debug-config", args: "" });
+  expect(parseCodexCommand("/root/project/file.ts")).toBeNull();
+  expect(parseCodexCommand("explain /model")).toBeNull();
+});

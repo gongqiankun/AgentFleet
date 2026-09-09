@@ -1,0 +1,61 @@
+services:
+  control-plane:
+    container_name: agentfleet-control-plane
+    image: agentfleet:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        AGENTFLEET_BUILD_SHA: ${AGENTFLEET_BUILD_SHA:-local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_PATH: /app/data/control-plane.sqlite
+      WEB_DIST_DIR: /app/web
+      RUNTIME_RELEASE_DIR: /app/runtime-releases
+    ports:
+      - "${PUBLISH_HOST:-127.0.0.1}:3215:3000"
+    volumes:
+      - agentfleet-data:/app/data
+      - agentfleet-runtime-releases:/app/runtime-releases
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+
+  runtime-validator:
+    container_name: agentfleet-runtime-validator
+    image: agentfleet:local
+    command: ["node", "control-plane/dist/src/runtime-worker.js"]
+    restart: unless-stopped
+    environment:
+      RUNTIME_RELEASE_DIR: /app/runtime-releases
+      RUNTIME_BASELINE_DIR: /app/web/downloads
+    volumes:
+      - agentfleet-runtime-releases:/app/runtime-releases
+    # No database, credentials, Docker socket, host projects or inbound ports.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    mem_limit: 1536m
+    pids_limit: 128
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    healthcheck:
+      test: ["CMD", "node", "-e", "const s=require('/app/runtime-releases/state.json');process.exit(Date.now()-Date.parse(s.workerHeartbeatAt)<90000?0:1)"]
+      interval: 30s
+      timeout: 4s
+      start_period: 60s
+
+volumes:
+  agentfleet-data:
+    name: agentfleet-data
+  agentfleet-runtime-releases:
+    name: agentfleet-runtime-releases

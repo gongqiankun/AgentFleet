@@ -1,0 +1,26 @@
+{
+  "name": "@agentfleet/local-agent",
+  "version": "0.29.0",
+  "private": true,
+  "description": "P0b AgentFleet local agent for Linux, macOS, Windows and schema-compatible Codex hosts",
+  "type": "module",
+  "bin": {
+    "agentfleet": "dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "node ../../packaging/embed-image-helper.mjs && tsc -p tsconfig.json && node -e \"if(process.platform!=='win32')require('node:fs').chmodSync('dist/src/cli.js',0o755)\"",
+    "build:sea": "../../packaging/build-sea.sh",
+    "build:portable": "../../packaging/build-portable.sh",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "esbuild": "^0.25.12",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "5.9.3"
+  }
+}

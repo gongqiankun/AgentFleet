@@ -1,0 +1,28 @@
+# Control-plane/web changes only. Keep published Agent/runtime artifacts immutable.
+ARG BASE_IMAGE
+FROM node:24-bookworm-slim AS web-build
+WORKDIR /build/apps/web
+COPY apps/web/package.json apps/web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY apps/web/ ./
+RUN npm run build
+
+FROM node:24-bookworm-slim AS control-plane-build
+WORKDIR /build/apps/control-plane
+COPY apps/control-plane/package.json apps/control-plane/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY apps/control-plane/ ./
+RUN npm run build
+
+FROM node:24-bookworm-slim AS control-plane-deps
+WORKDIR /build/apps/control-plane
+COPY apps/control-plane/package.json apps/control-plane/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
+FROM ${BASE_IMAGE}
+ARG AGENTFLEET_BUILD_SHA=unknown
+ENV AGENTFLEET_BUILD_SHA=${AGENTFLEET_BUILD_SHA}
+COPY --from=control-plane-build --chown=agentfleet:agentfleet /build/apps/control-plane/package.json /app/control-plane/package.json
+COPY --from=control-plane-build --chown=agentfleet:agentfleet /build/apps/control-plane/dist/ /app/control-plane/dist/
+COPY --from=control-plane-deps --chown=agentfleet:agentfleet /build/apps/control-plane/node_modules/ /app/control-plane/node_modules/
+COPY --from=web-build --chown=agentfleet:agentfleet /build/apps/web/dist/ /app/web/

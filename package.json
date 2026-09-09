@@ -1,0 +1,21 @@
+{
+  "name": "agentfleet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A hosted control plane for remote Codex sessions on trusted Linux, macOS, and Windows machines.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "npm run build:control-plane && npm run build:web && npm run build:local-agent",
+    "build:control-plane": "npm --prefix apps/control-plane run build",
+    "build:web": "npm --prefix apps/web run build",
+    "build:local-agent": "npm --prefix apps/local-agent run build",
+    "build:agent-release": "./packaging/build-release.sh",
+    "check": "npm --prefix apps/control-plane run typecheck && npm --prefix apps/web run lint && npm --prefix apps/local-agent run check",
+    "test": "npm --prefix apps/control-plane test && npm --prefix apps/local-agent test && npm --prefix apps/web test",
+    "container:build": "docker compose build",
+    "container:up": "docker compose up -d",
+    "container:logs": "docker compose logs -f control-plane"
+  }
+}

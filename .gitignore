@@ -1,0 +1,45 @@
+# Dependencies and build products
+node_modules/
+dist/
+coverage/
+/release/
+*.tsbuildinfo
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+
+# Runtime data and secrets
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.pem
+*.key
+*.p12
+*.log
+
+# Local Agent identity/state
+.agentfleet/
+agentfleet-state/
+
+# Test and browser artifacts
+.playwright-cli/
+output/
+
+# Workspace-local agent metadata
+.agents/
+.codex/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+
+# Private deployment notes and audit reports (never publish)
+README.local.md
+.private/
+*.local.md
+*.audit.json
+*.audit.md
