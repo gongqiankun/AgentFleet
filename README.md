@@ -53,8 +53,10 @@ The sidebar counts are shortcuts: click a category, then select a host or sessio
 | Shortcut | What you can reach |
 | --- | --- |
 | **Running** | Sessions with an active turn, including work waiting for your answer or approval |
-| **Controlled** | Sessions currently under AgentFleets control, including idle sessions you want to return to |
+| **Controlled** | Sessions still under AgentFleets control, including completed tasks whose results you want to review or follow up on |
 | **Online hosts** | Connected hosts, with direct access to their workspace |
+
+**Use Running to follow progress and Controlled to return to results.** When a turn finishes, its session leaves Running. As long as control has not been released, you can still find it under Controlled to review the output or send the next instruction without browsing hosts and projects again. Controlled also includes active sessions; it is not a completed-only filter.
 
 Counts and open lists update as reported state changes. **Controlled means currently controlled, not recently viewed or previously controlled**; released sessions are not a takeover-history list. This workflow is especially useful when several tasks are spread across multiple hosts and projects.
 
