@@ -10,7 +10,7 @@
 
 <p align="center">
   English · <a href="README.zh-CN.md">简体中文</a><br><br>
-  <a href="#self-host">Get started</a> · <a href="#built-for-your-native-sessions">Features</a> · <a href="#how-it-compares-to-codex">Compare with Codex</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a>
+  <a href="#self-host">Get started</a> · <a href="#built-for-your-native-sessions">Features</a> · <a href="#how-it-compares-to-codex">Compare with Codex</a> · <a href="#our-vision">Vision</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a>
 </p>
 
 <p align="center"><strong>Pick up your Codex work from any browser.</strong><br>
@@ -20,6 +20,16 @@ Keep execution in your own environment.</p>
 ![AgentFleets workspace showing three demo hosts, project sessions, and a live conversation](docs/assets/workspace-en.png)
 
 <p align="center"><sub>Actual interface with synthetic demo data. No production accounts, hosts, or conversations are shown.</sub></p>
+
+## Our vision
+
+**Every computer. Any operating system. Codex as the interface. AgentFleets in control.**
+
+We want Codex to become the single entry point for operating every computer—from writing code and managing files to running applications and maintaining systems. AgentFleets would connect those computers into one workspace, where you can direct work, follow progress, and manage access without switching between machines or learning a different workflow for each operating system.
+
+Codex acts on each computer. AgentFleets coordinates the fleet. You decide what they can do.
+
+This is our long-term direction. Today, AgentFleets manages native Codex sessions on supported Linux, macOS, and Windows hosts; universal operating-system support and a complete interface for every computer operation remain goals, not current capabilities.
 
 ## Built for your native sessions
 

@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="README.md">English</a> · 简体中文<br><br>
-  <a href="#自行部署">开始使用</a> · <a href="#围绕原生会话构建">功能一览</a> · <a href="#与-codex-有什么区别">与 Codex 对比</a> · <a href="CONTRIBUTING.md">参与贡献</a> · <a href="SECURITY.md">安全报告</a>
+  <a href="#自行部署">开始使用</a> · <a href="#围绕原生会话构建">功能一览</a> · <a href="#与-codex-有什么区别">与 Codex 对比</a> · <a href="#我们的愿景">愿景</a> · <a href="CONTRIBUTING.md">参与贡献</a> · <a href="SECURITY.md">安全报告</a>
 </p>
 
 <p align="center"><strong>打开浏览器，接着做你的 Codex 工作。</strong><br>
@@ -20,6 +20,16 @@
 ![AgentFleets 工作台：演示主机、项目会话和实时对话](docs/assets/workspace-zh.png)
 
 <p align="center"><sub>真实产品界面，使用虚构演示数据，不包含生产账号、主机或会话。</sub></p>
+
+## 我们的愿景
+
+**每一台电脑，无论什么系统，都以 Codex 为统一操作入口，由 AgentFleets 统一连接、调度和管理。**
+
+我们希望，从编写代码、管理文件，到使用应用、维护系统，都可以通过 Codex 完成。AgentFleets 将这些电脑连接成一个工作台，让你在一处下达任务、查看进度和管理权限，不必反复切换设备，也不必为不同操作系统学习另一套操作方式。
+
+Codex 负责在每台电脑上执行，AgentFleets 负责统筹所有电脑，而你决定它们可以做什么。
+
+这是项目的长期方向。目前 AgentFleets 聚焦于受支持的 Linux、macOS 和 Windows 主机上的 Codex 原生会话管理；支持任意操作系统、覆盖电脑上的所有操作，仍是愿景，并非已经实现的能力。
 
 ## 围绕原生会话构建
 
