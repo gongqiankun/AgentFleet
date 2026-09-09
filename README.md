@@ -1,20 +1,40 @@
-# AgentFleets for Codex
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="AgentFleets for Codex — Your hosts. One workspace." width="100%">
+</p>
 
-[简体中文](README.zh-CN.md)
+<p align="center">
+  <a href="https://github.com/gongqiankun/AgentFleet/actions/workflows/ci.yml"><img src="https://github.com/gongqiankun/AgentFleet/actions/workflows/ci.yml/badge.svg" alt="Build and test status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-55def2?labelColor=111e35" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/deployment-self--hosted-a18bff?labelColor=111e35" alt="Self-hosted">
+</p>
 
-A self-hosted web workspace for managing native Codex sessions across your own Linux, macOS, and Windows machines. Keep execution on your hosts and use a browser to follow conversations, send messages, and manage session control.
+<p align="center">
+  English · <a href="README.zh-CN.md">简体中文</a><br><br>
+  <a href="#self-host">Get started</a> · <a href="#built-for-your-native-sessions">Features</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a>
+</p>
 
-This is an independent project, not an official OpenAI product. Deploy your own instance and use your own Codex credentials. No shared service or default login is provided.
+<p align="center"><strong>Pick up your Codex work from any browser.</strong><br>
+Follow conversations across your machines. Continue the same native session.<br>
+Keep execution in your own environment.</p>
 
-## Features
+![AgentFleets workspace showing three demo hosts, project sessions, and a live conversation](docs/assets/workspace-en.png)
 
-- Browse hosts, projects, and native sessions in one workspace.
-- Take control of a session, continue the same native conversation, then release control back to the host.
-- Rename, archive, fork, and delete sessions with host-side confirmation where supported.
-- Follow streaming output, queue messages, and configure execution permissions per session.
-- Keep uncertain operations frozen until you verify the host and manually unfreeze them.
-- Upload images, inspect storage by session, and preview supported image cleanup operations.
-- English and Simplified Chinese interface, responsive layouts, and keyboard shortcuts: Enter to send; Ctrl+Enter or ⌘+Enter for a newline.
+<p align="center"><sub>Actual interface with synthetic demo data. No production accounts, hosts, or conversations are shown.</sub></p>
+
+## Built for your native sessions
+
+<table>
+<tr>
+<td width="33%" valign="top"><h3>One fleet, one view</h3>Find your hosts, projects, and conversations without hopping between terminals. Linux, macOS, and Windows in one workspace.</td>
+<td width="33%" valign="top"><h3>Continue where you left off</h3>Take control, send a message, and release back to the host. Rename a session without changing its native identity.</td>
+<td width="33%" valign="top"><h3>Keep work moving</h3>Follow streaming output, add instructions to a running turn, or queue the next message. Choose execution permissions per session.</td>
+</tr>
+<tr>
+<td valign="top"><h3>Recover deliberately</h3>Unknown outcomes freeze writes. Verify the host and unfreeze manually, with no automatic replay of uncertain actions.</td>
+<td valign="top"><h3>See what you store</h3>Inspect image storage by session. Preview supported cleanup before confirming it, with text and session identity preserved.</td>
+<td valign="top"><h3>Work in your language</h3>English and Simplified Chinese, responsive layouts, and keyboard shortcuts. Enter sends; Ctrl/⌘+Enter adds a newline.</td>
+</tr>
+</table>
 
 ## Self-host
 
@@ -44,6 +64,11 @@ For loopback-only evaluation, set both origins to `http://127.0.0.1:3215` and `C
 
 Compose persists control-plane data and validated runtime releases in named volumes. Back up your configuration and volumes before upgrades; do not use `docker compose down -v` unless you intend to delete them. See [release guidance](docs/web-only-release.md) for updates that preserve existing Agent downloads.
 
+## Worth knowing
+
+<details>
+<summary><strong>Session ownership, recovery, and image cleanup</strong></summary>
+
 ## Session control and recovery
 
 A native session has one writer. While the panel controls a session, do not open that same session with `codex resume` on the host. Release control in the panel and wait for the host to acknowledge it before resuming locally. To return to the panel, stop the local writer first, then take control again. Renaming changes the title, not the native session ID.
@@ -55,6 +80,12 @@ A disconnect or restart can leave an operation's outcome unknown even if a reply
 The control plane stores account and host enrollment data, synchronized conversation content, operation records, and uploaded images. Codex execution and model credentials remain on the host. Protect both the control-plane volumes and host data; this is not a storage-free relay.
 
 The default image quota is 50 MB per host. Supported cleanup can remove panel-uploaded image content on both sides while preserving text and native session identity. Native-history cleanup is currently restricted to the validated Linux/Codex adapter and requires Python 3; unsupported or ambiguous data is rejected. Cleanup does not delete provider-side data or independent backups. Native history files may retain their byte length after image removal. Storage size is not a token-usage estimate. See [image cleanup](docs/panel-image-cleanup.md).
+
+
+</details>
+
+<details>
+<summary><strong>Development and project structure</strong></summary>
 
 ## Development
 
@@ -79,6 +110,12 @@ npm run build
 
 See [contributing](CONTRIBUTING.md), [security reporting](SECURITY.md), and [packaging](packaging/README.md). Changes to session ownership, replay, or native history require focused recovery tests; passing UI tests alone is insufficient.
 
-## License
 
-[MIT](LICENSE). Third-party software retains its own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+</details>
+
+---
+
+<p align="center">Built for people who run Codex on their own machines.<br>
+<a href="LICENSE">MIT licensed</a> · <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a> · <a href="CONTRIBUTING.md">Contributions welcome</a></p>
+
+<sub>Independent project, not an official OpenAI product. Deploy your own instance and use your own Codex credentials. No shared service or default login is provided.</sub>

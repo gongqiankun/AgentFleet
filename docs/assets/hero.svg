@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="title desc">
+<title id="title">AgentFleets for Codex</title><desc id="desc">Your hosts. One workspace. A self-hosted control plane for native Codex sessions.</desc>
+<defs>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0b1429"/><stop offset="1" stop-color="#11182f"/></linearGradient>
+  <linearGradient id="signal"><stop stop-color="#55def2"/><stop offset="1" stop-color="#a18bff"/></linearGradient>
+  <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#7185b7" stroke-opacity=".065"/></pattern>
+</defs>
+<rect width="1200" height="330" rx="18" fill="url(#bg)"/><rect width="1200" height="330" rx="18" fill="url(#grid)"/>
+<path d="M42 0H278" stroke="url(#signal)" stroke-width="3"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<g transform="translate(52 40)" fill="none" stroke="#55def2" stroke-width="3" stroke-linecap="round"><circle cx="18" cy="18" r="3" fill="#55def2" stroke="none"/><path d="M11 9a12 12 0 0 0 0 18M25 9a12 12 0 0 1 0 18M5 3a20 20 0 0 0 0 30M31 3a20 20 0 0 1 0 30"/></g>
+<text x="104" y="63" fill="#9caecc" font-size="13" letter-spacing="2.6">NATIVE CODEX · REMOTE WORKSPACE</text>
+<text x="50" y="142" fill="#edf4ff" font-size="58" font-weight="700" letter-spacing="-2">AgentFleets<tspan fill="#55def2" font-size="26" font-weight="400" letter-spacing="-.5"> for Codex</tspan></text>
+<text x="52" y="192" fill="#ecf1ff" font-size="27" letter-spacing="-.5">Your hosts. One workspace.</text>
+<text x="52" y="227" fill="#98aac8" font-size="16">Follow, continue, and manage your native sessions.</text>
+<path d="M52 263H595" stroke="#263753"/>
+<text x="52" y="291" fill="#6bdeec" font-size="12" letter-spacing="1.4">SELF-HOSTED</text><text x="182" y="291" fill="#8193b4" font-size="12">/</text><text x="207" y="291" fill="#bac5dc" font-size="12" letter-spacing="1.4">MULTI-HOST</text><text x="330" y="291" fill="#8193b4" font-size="12">/</text><text x="355" y="291" fill="#bac5dc" font-size="12" letter-spacing="1.4">YOUR EXECUTION ENVIRONMENT</text>
+<g fill="none" stroke="#314360"><circle cx="884" cy="170" r="113"/><circle cx="884" cy="170" r="77" stroke-dasharray="3 8"/><path d="M677 170H1095M884 36V304" stroke-opacity=".5"/></g>
+<path d="M738 170H841M925 170H1028M884 129V76M884 211V264" stroke="url(#signal)" stroke-width="2" fill="none"/>
+<rect x="842" y="128" width="84" height="84" rx="23" fill="#102b40" stroke="#55def2"/>
+<g transform="translate(866 152)" fill="none" stroke="#55def2" stroke-width="3" stroke-linecap="round"><circle cx="18" cy="18" r="3" fill="#55def2" stroke="none"/><path d="M10 8a13 13 0 0 0 0 20M26 8a13 13 0 0 1 0 20M3 2a22 22 0 0 0 0 32M33 2a22 22 0 0 1 0 32"/></g>
+<g fill="#111e35" stroke="#3a4c6e"><rect x="686" y="151" width="100" height="38" rx="8"/><rect x="834" y="39" width="100" height="38" rx="8"/><rect x="984" y="151" width="100" height="38" rx="8"/><rect x="820" y="263" width="128" height="32" rx="8"/></g>
+<g font-size="13" fill="#d3def0" text-anchor="middle"><text x="736" y="175">Linux</text><text x="884" y="63">macOS</text><text x="1034" y="175">Windows</text><text x="884" y="284" fill="#a8eff6" font-size="12">Same native session</text></g>
+<circle cx="816" cy="170" r="3" fill="#55def2"/><circle cx="957" cy="170" r="3" fill="#a18bff"/><circle cx="884" cy="101" r="3" fill="#55def2"/>
+</g></svg>
