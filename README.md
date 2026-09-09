@@ -10,7 +10,7 @@
 
 <p align="center">
   English · <a href="README.zh-CN.md">简体中文</a><br><br>
-  <a href="#self-host">Get started</a> · <a href="#built-for-your-native-sessions">Features</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a>
+  <a href="#self-host">Get started</a> · <a href="#built-for-your-native-sessions">Features</a> · <a href="#how-it-compares-to-codex">Compare with Codex</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a>
 </p>
 
 <p align="center"><strong>Pick up your Codex work from any browser.</strong><br>
@@ -35,6 +35,27 @@ Keep execution in your own environment.</p>
 <td valign="top"><h3>Work in your language</h3>English and Simplified Chinese, responsive layouts, and keyboard shortcuts. Enter sends; Ctrl/⌘+Enter adds a newline.</td>
 </tr>
 </table>
+
+## How it compares to Codex
+
+**AgentFleets adds a self-hosted management interface around Codex.** The host's Codex runtime still executes the work; AgentFleets does not supply a model, a subscription, or extra usage quota.
+
+[Codex CLI](https://learn.chatgpt.com/docs/cli) is the terminal interface. The [official desktop app](https://learn.chatgpt.com/docs/app) provides a graphical workspace. AgentFleets focuses on administering enrolled hosts and their native sessions through your own browser-based panel.
+
+| Area | Official desktop Remote Control | AgentFleets |
+| --- | --- | --- |
+| Access | Supported desktop/mobile apps | Your self-hosted web panel |
+| Device identity | Same ChatGPT account **and workspace**, plus device authorization | Independent panel login and one-time host enrollment |
+| Connection | Official relay; SSH is a separate option | Agent on each host connects outward to your control plane |
+| Continue work | Continue chats and steer active work remotely | Continue native sessions with explicit take-control/release handling |
+| Administration | Official app connection settings | Host/project/session overview, queues, manual unfreeze, retention and supported image cleanup |
+| Operation | Official client setup | You operate HTTPS, storage, backups and updates |
+
+**About “Devices you can control from this computer”:** this is the account-paired Remote Control flow. Matching accounts alone is not enough; devices must also be authorized. SSH uses a separate connection setup with SSH access and authenticated Codex on the target. See the [official connection requirements](https://learn.chatgpt.com/docs/remote-connections). Checked September 9, 2026; labels and availability can change by app version and rollout. Current documentation refers to the ChatGPT desktop app's Codex experience.
+
+AgentFleets enrolls hosts using its own credentials; it does not require their Codex logins to match each other or the panel email. Each host still needs its own valid Codex authentication and permissions. This is separate host management, **not account sharing, quota pooling, or a multi-user team permission system**. The current panel uses one administrator account.
+
+Use the official app if its remote workflow meets your needs. Choose AgentFleets when you want to operate and customize your own multi-host web panel. Features overlap: remote continuation is not exclusive to AgentFleets. AgentFleets controls sessions where they live; it does not currently migrate a conversation and its Git state between hosts. Release its writer before opening that same native session in another client.
 
 ## Self-host
 

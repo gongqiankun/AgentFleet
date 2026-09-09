@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="README.md">English</a> · 简体中文<br><br>
-  <a href="#自行部署">开始使用</a> · <a href="#围绕原生会话构建">功能一览</a> · <a href="CONTRIBUTING.md">参与贡献</a> · <a href="SECURITY.md">安全报告</a>
+  <a href="#自行部署">开始使用</a> · <a href="#围绕原生会话构建">功能一览</a> · <a href="#与-codex-有什么区别">与 Codex 对比</a> · <a href="CONTRIBUTING.md">参与贡献</a> · <a href="SECURITY.md">安全报告</a>
 </p>
 
 <p align="center"><strong>打开浏览器，接着做你的 Codex 工作。</strong><br>
@@ -35,6 +35,27 @@
 <td valign="top"><h3>按习惯使用</h3>中英文界面、响应式布局和键盘快捷键。Enter 发送，Ctrl/⌘+Enter 换行。</td>
 </tr>
 </table>
+
+## 与 Codex 有什么区别
+
+**AgentFleets 为 Codex 提供自行部署的管理界面。** 真正执行任务的仍是宿主机上的 Codex；本项目不提供模型、订阅或额外使用额度。
+
+[Codex CLI](https://learn.chatgpt.com/docs/cli) 是终端入口，[官方桌面版](https://learn.chatgpt.com/docs/app)提供图形工作台。AgentFleets 侧重用自己的浏览器面板，统一管理已配对主机及其原生会话。
+
+| 对比项 | 官方桌面版 Remote Control | AgentFleets |
+| --- | --- | --- |
+| 使用入口 | 受支持的桌面端、移动端应用 | 自行部署的网页面板 |
+| 设备身份 | 同一 ChatGPT **账号和工作区**，另需设备授权 | 独立面板账号，一次性配对主机 |
+| 连接方式 | 官方中继；另有独立的 SSH 连接方式 | 每台主机上的 Agent 主动连接你的控制面 |
+| 继续工作 | 远程继续对话、补充当前任务指令 | 继续原生会话，明确接管与释放写入权 |
+| 管理重点 | 官方应用的连接设置 | 主机／项目／会话总览、队列、手动解冻、保留策略和受支持的图片清理 |
+| 运维责任 | 配置官方客户端 | 自己管理 HTTPS、存储、备份和更新 |
+
+**“可通过此电脑控制的设备”是否要求同账号？** 对账号配对式 Remote Control，是同一账号加同一工作区，还需要完成设备授权；并非登录同账号就自动可用。SSH 属于另一种配置流程，需要 SSH 访问权限和目标主机上的 Codex 认证，不能混为一谈。依据：[官方远程连接说明](https://learn.chatgpt.com/docs/remote-connections)。核对日期：2026-09-09；界面名称和开放范围可能随版本变化，当前官方文档已使用 ChatGPT 桌面应用中的 Codex 入口这一表述。
+
+AgentFleets 用自己的凭据配对主机，不要求各主机的 Codex 登录账号彼此相同，也不要求与面板邮箱相同。每台主机仍须有可用的 Codex 认证及权限。这是独立的主机管理，**不代表账号共享、额度合并或多人团队权限系统**；当前面板使用单一管理员账号。
+
+官方远程功能已满足需求时，直接使用官方应用即可。希望自行掌握部署、定制和多主机网页管理时，再选择 AgentFleets。两者功能有重叠，“远程继续会话”并非本项目独有。AgentFleets 在原主机上管理会话，目前不提供将对话及 Git 状态整体迁移到另一台主机的功能；换其他客户端打开同一原生会话前，需先释放面板写入权。
 
 ## 自行部署
 
