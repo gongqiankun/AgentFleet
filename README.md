@@ -17,6 +17,8 @@
 Follow conversations across your machines. Continue the same native session.<br>
 Keep execution in your own environment.</p>
 
+<p align="center">A self-hosted Codex web UI for remote control and multi-host session management.<br>Available in English and Simplified Chinese.</p>
+
 ![AgentFleets workspace showing three demo hosts, project sessions, and a live conversation](docs/assets/workspace-en.png)
 
 <p align="center"><sub>Actual interface with synthetic demo data. No production accounts, hosts, or conversations are shown.</sub></p>
@@ -42,7 +44,7 @@ This is our long-term direction. Today, AgentFleets manages native Codex session
 <tr>
 <td valign="top"><h3>Recover deliberately</h3>Unknown outcomes freeze writes. Verify the host and unfreeze manually, with no automatic replay of uncertain actions.</td>
 <td valign="top"><h3>See what you store</h3>Inspect image storage by session. Preview supported cleanup before confirming it, with text and session identity preserved.</td>
-<td valign="top"><h3>Work in your language</h3>English and Simplified Chinese, responsive layouts, and keyboard shortcuts. Enter sends; Ctrl/⌘+Enter adds a newline.</td>
+<td valign="top"><h3>Keep your model preferences</h3>Inherit Codex model and reasoning-effort settings, set host defaults once, and override individual sessions when needed. Avoid configuring every conversation from scratch.</td>
 </tr>
 </table>
 
@@ -59,6 +61,20 @@ The sidebar counts are shortcuts: click a category, then select a host or sessio
 **Use Running to follow progress and Controlled to return to results.** When a turn finishes, its session leaves Running. As long as control has not been released, you can still find it under Controlled to review the output or send the next instruction without browsing hosts and projects again. Controlled also includes active sessions; it is not a completed-only filter.
 
 Counts and open lists update as reported state changes. **Controlled means currently controlled, not recently viewed or previously controlled**; released sessions are not a takeover-history list. This workflow is especially useful when several tasks are spread across multiple hosts and projects.
+
+### Model and reasoning settings that follow your workflow
+
+Keep using Codex's own configuration when no panel override is set. Or save host defaults once and make exceptions for a particular session. Existing project defaults participate in the same precedence:
+
+**Session settings → project settings → host defaults → Codex's own configuration** (highest priority first).
+
+For example, keep a host's everyday model and reasoning effort as its default, then give one demanding session a different supported model or deeper reasoning. Clear that session's override to return to the applicable defaults. Where the host runtime supports them, the panel also exposes plan/execution mode, service tier, and communication style.
+
+- **Fewer repeated choices:** reuse saved settings across sessions instead of selecting the model and reasoning effort every time.
+- **Visible configuration:** inspect the selected source, recently observed runtime values, and the settings last accepted by the host. A saved preference is not proof of the provider's final model choice.
+- **Controlled changes:** saved defaults are used for subsequent sends; they do not rewrite the host's `config.toml` or change a turn already running. Choices are validated against the host's reported capabilities.
+
+Together with direct access to running and completed-but-controlled sessions, native-session continuity, message queues, and explicit recovery, these are the workflows AgentFleets focuses on making easier. They are practical product strengths, not claims that other Codex clients lack similar features.
 
 ## How it compares to Codex
 
