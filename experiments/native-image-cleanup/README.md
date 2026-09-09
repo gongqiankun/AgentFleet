@@ -1,48 +1,21 @@
-# 原生历史图片定向清理实验
+# Isolated native-image cleanup experiments
 
-**实验原型，不是已发布的面板功能。** 仅允许操作测试生成的独立 `CODEX_HOME`，要求测试标记、无账号凭据和模拟模型配置；没有生产 CLI 入口，也没有被 Agent、控制面或安装包引用。
+This directory contains the original test-only prototype and native compatibility harness. Its cleanup entry point is restricted to generated test homes with synthetic credentials and model responses. Do not remove those restrictions or run it on a user's history.
 
-2026-09-09 在 Linux Codex **0.153.4** 的 **legacy / paginated** 两种原生历史上验证通过。其他版本、macOS、Windows、归档、压缩/分支引用及真实账号任务尚未验证。
+The production adapter is maintained separately in `apps/local-agent/src/native-image-helper.py` and embedded by `packaging/embed-image-helper.mjs`. See the current [feature scope and limitations](../../docs/panel-image-cleanup.md); this prototype is not the production command-line interface.
 
-## 已实现
+## Run isolated checks
 
-- 按原生 thread ID、turn ID 和图片 SHA-256 限定清理目标。此处由测试提供身份；**没有实现面板上传来源的生产映射**。
-- 获取与原生 Codex 协调的独占写入锁；存在外部写入者时失败，不删除锁文件、不终止其他进程。还检查历史中的未结束轮次、预览哈希、原生版本和文件边界。
-- 只替换用户消息中的指定图片数据，并更新对应分页消息副本；保留原文字字符串、thread/turn/item ID、标题和非目标图片。
-- 原子替换历史文件，SQLite 消息更新放在事务中；不改原生索引位置。中断后不能声称完整清理成功，需要重新核验并完成剩余副本的处理。
+Use Linux, Python 3, Node.js 24, a built Local Agent, and a Codex 0.153.4 executable for the native compatibility tests:
 
-为避免更改分页索引，本实验以空格补齐被替换记录的原始字节长度。**图片编码内容已移除，但历史文件暂不缩小，也不承诺磁盘空间已释放。** SQLite/WAL、备份和其他持久副本不能仅凭这次逻辑删除声称已物理擦除。
-
-## 验证
-
-需要 Linux、Python 3、Node.js 24、构建后的 Local Agent，以及原生 Codex 0.153.4 可执行文件。使用真实二进制、两个小测试 PNG 和本机 HTTP 模拟模型服务，不读取生产账号、不请求 OpenAI 模型、不操作用户项目。
-
-```bash
+```sh
 npm --prefix apps/local-agent run build
 python3 -m unittest discover -s experiments/native-image-cleanup -v
-AGENTFLEET_NATIVE_CODEX=/absolute/path/to/0.153.4/codex \
+AGENTFLEET_NATIVE_CODEX=/absolute/path/to/codex \
   node --test --test-isolation=none --test-concurrency=1 \
   experiments/native-image-cleanup/native-test.mjs
 ```
 
-不设置 `AGENTFLEET_NATIVE_CODEX` 时原生测试跳过，不能据此声称原生验收通过。使用真实二进制路径；以 root 运行时沿用 Agent 对可执行文件及父目录所有权的检查，不放宽保护。
+Without `AGENTFLEET_NATIVE_CODEX`, native tests are skipped; a skip is not proof of compatibility. The harness uses temporary homes, small synthetic images, and a local mock model server. It must not use production credentials or user projects.
 
-已通过 **10 项基础回归 + 2 组真实原生测试**：
-
-- 中文、换行、emoji、工具参数与结果、非目标图片/会话/轮次保留；未知字段、过期预览、路径越界、符号链接、账号目录与未结束轮次拒绝处理。
-- Codex 实际创建和保存带两张图片的会话，再定向清理其中一张；两种历史格式均可恢复同一个 ID，标题和原有消息 ID 保持，结构化比对所有非目标消息内容。
-- 恢复后继续发送：模拟模型服务收到原文字和保留的图片，不再收到目标图片；随后再次退出并恢复，能读到新的回复。
-- 原生进程持锁时拒绝清理；清理前异常不改数据；历史替换后、SQLite 提交前让清理进程直接退出，原会话仍可恢复，显式核验后完成剩余投影更新；重复清理不重复改写。
-
-## 尚不能发布的原因
-
-本实验只验证原生存储的核心操作。生产接入还需要：
-
-1. 上传来源与原生消息的可靠映射，不能仅按相同图片字节扩大删除范围；旧数据、追加消息、跨会话及子代理引用必须有明确处理。
-2. 清理预览、版本化确认、主机持久操作回执、部分完成/未知结果及恢复流程；宿主机确认完成后才清理对应云端内容。
-3. Agent 持久 inbox/journal/outbox 中的图片副本处理、哈希校验兼容，以及旧事件重放保护。
-4. 支持真正回收历史文件空间的索引更新方案，及其跨文件中断恢复；更多存储格式、运行时版本与跨平台回归。
-
-不能去掉测试目录限制后直接部署。现有线上“仅清理云端图片”按钮的行为保持不变。
-
-原生写入锁实现核对：[Codex 0.153.4 writer_lock.rs](https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/thread-store/src/local/writer_lock.rs)。
+Coverage includes text and session-identity preservation, non-target images, writer exclusion, stale previews, unsupported inputs, interrupted projection updates, and resuming the same session after cleanup. Native tests cover legacy and paginated history layouts. Padding preserves line byte offsets, so these checks do not demonstrate disk-space reclamation or secure erasure of backups and WAL files.
