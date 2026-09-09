@@ -35,7 +35,7 @@ This is our long-term direction. Today, AgentFleets manages native Codex session
 
 <table>
 <tr>
-<td width="33%" valign="top"><h3>One fleet, one view</h3>Find your hosts, projects, and conversations without hopping between terminals. Linux, macOS, and Windows in one workspace.</td>
+<td width="33%" valign="top"><h3>Find active work fast</h3>Click Running, Controlled, or Online hosts, then jump straight to the session or machine you need. Skip browsing project trees across your fleet.</td>
 <td width="33%" valign="top"><h3>Continue where you left off</h3>Take control, send a message, and release back to the host. Rename a session without changing its native identity.</td>
 <td width="33%" valign="top"><h3>Keep work moving</h3>Follow streaming output, add instructions to a running turn, or queue the next message. Choose execution permissions per session.</td>
 </tr>
@@ -45,6 +45,18 @@ This is our long-term direction. Today, AgentFleets manages native Codex session
 <td valign="top"><h3>Work in your language</h3>English and Simplified Chinese, responsive layouts, and keyboard shortcuts. Enter sends; Ctrl/⌘+Enter adds a newline.</td>
 </tr>
 </table>
+
+### Jump straight to active work
+
+The sidebar counts are shortcuts: click a category, then select a host or session to open it directly across your fleet. No need to remember which project contains a conversation or expand hosts and projects one by one.
+
+| Shortcut | What you can reach |
+| --- | --- |
+| **Running** | Sessions with an active turn, including work waiting for your answer or approval |
+| **Controlled** | Sessions currently under AgentFleets control, including idle sessions you want to return to |
+| **Online hosts** | Connected hosts, with direct access to their workspace |
+
+Counts and open lists update as reported state changes. **Controlled means currently controlled, not recently viewed or previously controlled**; released sessions are not a takeover-history list. This workflow is especially useful when several tasks are spread across multiple hosts and projects.
 
 ## How it compares to Codex
 
