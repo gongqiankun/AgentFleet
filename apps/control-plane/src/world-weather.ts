@@ -1,6 +1,7 @@
 const locations = [
   ["new-york",40.7128,-74.006], ["los-angeles",34.0522,-118.2437], ["toronto",43.6532,-79.3832],
   ["tokyo",35.6762,139.6503], ["beijing",39.9042,116.4074], ["berlin",52.52,13.405], ["paris",48.8566,2.3522],
+  ["london",51.5074,-0.1278], ["sydney",-33.8688,151.2093],
 ] as const;
 type Forecast = { date: string; min: number; max: number; code: number };
 export type WorldWeather = { updatedAt: string | null; cities: Record<string, Forecast[]> };

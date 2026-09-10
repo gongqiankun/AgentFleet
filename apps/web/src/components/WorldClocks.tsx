@@ -4,10 +4,12 @@ export const clockCities = [
   {id:"new-york",country:"us",label:"纽约·美东",zone:"America/New_York"},
   {id:"los-angeles",country:"us",label:"洛杉矶·美西",zone:"America/Los_Angeles"},
   {id:"toronto",country:"ca",label:"多伦多",zone:"America/Toronto"},
+  {id:"london",country:"gb",label:"伦敦",zone:"Europe/London"},
   {id:"tokyo",country:"jp",label:"东京",zone:"Asia/Tokyo"},
   {id:"beijing",country:"cn",label:"北京",zone:"Asia/Shanghai"},
   {id:"berlin",country:"de",label:"柏林",zone:"Europe/Berlin"},
   {id:"paris",country:"fr",label:"巴黎",zone:"Europe/Paris"},
+  {id:"sydney",country:"au",label:"悉尼",zone:"Australia/Sydney"},
 ];
 export function cityTime(date: Date, zone: string) {
   return {time:new Intl.DateTimeFormat("en-GB",{timeZone:zone,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(date),date:new Intl.DateTimeFormat("en-CA",{timeZone:zone,year:"numeric",month:"2-digit",day:"2-digit"}).format(date)};
@@ -32,7 +34,7 @@ export function WorldClocks({side}:{side:"left"|"right"}) {
   return()=>{alive=false;clearInterval(timer);media.removeEventListener?.('change',update);document.removeEventListener('visibilitychange',update);};
  },[]);
  return <div className={`world-clocks world-clocks--${side}`} aria-label={t("世界时间")}>
- {(side==='left'?clockCities.slice(0,3):clockCities.slice(3)).map(city=>{
+ {(side==='left'?clockCities.slice(0,4):clockCities.slice(4)).map(city=>{
   const local=cityTime(now,city.zone);const fresh=weather.updatedAt&&now.getTime()-Date.parse(weather.updatedAt)<2*60*60_000;
   const forecast=fresh?weather.cities[city.id]?.find(day=>day.date===local.date):undefined;
   return <div className="world-clock" key={city.id} title={`${t(city.label)} · ${local.date} · ${city.zone}`}>
