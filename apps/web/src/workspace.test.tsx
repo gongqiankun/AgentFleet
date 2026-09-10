@@ -161,6 +161,22 @@ describe("会话工作区", () => {
     expect(submit).toHaveBeenCalledTimes(1);
     expect(send).not.toHaveBeenCalled();
   });
+  it("手机回车只换行，点击发送才提交", async () => {
+    const send = vi.fn(noop);
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    try {
+      render(<SessionInspector {...inspectorProps("A")} onSend={send} />);
+      const prompt = screen.getByLabelText("发送给 Codex 的消息") as HTMLTextAreaElement;
+      const submit = vi.spyOn(prompt.form!, "requestSubmit").mockImplementation(() => {});
+      fireEvent.change(prompt, { target: { value: "手机草稿" } });
+      fireEvent.keyDown(prompt, { key: "Enter" });
+      expect(submit).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "发送" }));
+      await waitFor(() => expect(send).toHaveBeenCalledWith("手机草稿", undefined, undefined));
+    } finally { window.matchMedia = original; }
+  });
   it.each(["ctrlKey", "metaKey"])("%s + Enter 在选区插入换行、保留光标且不发送，随后 Enter 发送完整文本", async (modifier) => {
     const send = vi.fn(async (_prompt: string) => undefined);
     render(<SessionInspector {...inspectorProps("A")} onSend={send} />);
@@ -314,7 +330,7 @@ describe("会话工作区", () => {
   it("底部已接管列出所有会话，选择后直接打开对应会话", async () => {
     render(<App />);
     const nav = await screen.findByRole("navigation", { name: "主导航" });
-    expect(within(nav).queryByRole("button", { name: /待处理|审批/ })).toBeNull();
+    expect(within(nav).getByRole("button", { name: "待处理" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "查看已接管的会话（2）" }));
     const list = screen.getByRole("dialog", { name: /已接管的会话\s*2/ });
     expect(within(list).getByRole("button", { name: /会话A/ })).toBeTruthy();

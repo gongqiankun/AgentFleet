@@ -1,4 +1,4 @@
-const CACHE_NAME = "agentfleet-shell-v4";
+const CACHE_NAME = "agentfleet-shell-v5";
 const SHELL = ["/", "/favicon.svg", "/manifest.webmanifest", "/manifest.en.webmanifest"];
 
 self.addEventListener("install", (event) => {

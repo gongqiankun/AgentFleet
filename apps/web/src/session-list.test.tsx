@@ -293,7 +293,7 @@ describe("SessionInspector host sharing", () => {
     render(<SessionInspector detail={detail} loading={false} onRefresh={() => undefined} onClaim={async () => undefined} onContinueManaged={async () => undefined} onReleaseManagement={onReleaseManagement} onSend={async () => undefined} onQueue={async () => undefined} onSteer={async () => undefined} onCancelQueued={async () => undefined} onCancel={async () => undefined} onApproval={async () => undefined} />);
 
     expect(screen.queryByRole("button", { name: /取得控制权|释放控制权/ })).toBeNull();
-    expect(screen.getByText(/同一账号可换浏览器继续使用/)).toBeTruthy();
+    expect(screen.getByText(/可在其他设备继续/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /取消接管/ }));
     expect(onReleaseManagement).not.toHaveBeenCalled();
     expect(screen.getByText(/主机会话、本地和云端历史都会保留/)).toBeTruthy();

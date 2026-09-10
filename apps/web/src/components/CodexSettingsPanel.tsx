@@ -56,15 +56,11 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
   }, [sessionId, data, choice, changed, message, onSummary]);
   const summary = data ? `${changed ? t("未保存的选择") : labels[data.source]} · ${choice?.model ?? t("继承 Codex")} · ${choice?.effort ?? t("继承强度")} · ${choice?.mode === "plan" ? t("计划") : choice?.mode === "default" ? t("执行") : t("继承模式")}` : t("读取中");
   const content = <>
-    {!machineId && <p>{t("新建会话不算一轮。首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。")}</p>}
-    {machineId ? <p>{t("新会话和未单独覆盖的会话继承这里；会话覆盖优先，其次是已有项目配置。不修改宿主机 config.toml 或正在运行的任务。")}</p> : <p>{t("下次发送：")}{locale() === "en" ? " " : ""}{choice ? `${choice.model} · ${choice.effort ?? t("继承强度")} · ${choice.mode === "plan" ? t("计划") : choice.mode === "default" ? t("执行") : t("继承模式")}` : t("不附加覆盖，沿用 Codex 当前配置")}{locale() === "en" ? " " : ""}{t("。更改主机统一默认值请到主机页。")}</p>}
-    {observed?.observed && <p>{t("最近读取：")}{locale() === "en" ? " " : ""}{observed.observed.model} · {observed.observed.effort ?? t("强度未上报")} · {new Date(observed.observed.observedAt).toLocaleString(locale())}</p>}
-    {observed?.accepted && <p>{t("主机上次接受：")}{locale() === "en" ? " " : ""}{observed.accepted.model} · {observed.accepted.effort ?? t("继承强度")} · {observed.accepted.mode === "plan" ? t("计划模式") : observed.accepted.mode === "default" ? t("执行模式") : t("继承模式")}{locale() === "en" ? " " : ""}{t("（不代表提供方绝无模型回退）")}</p>}
-    {observed?.accepted && (observed.accepted.serviceTier !== undefined || observed.accepted.personality) && <p>{t("上次接受的服务档位：")}{locale() === "en" ? " " : ""}{observed.accepted.serviceTier === null ? t("默认") : observed.accepted.serviceTier ?? t("继承")} {locale() === "en" ? " " : ""}{t("· 沟通风格：")}{locale() === "en" ? " " : ""}{observed.accepted.personality ?? t("继承")}{locale() === "en" ? " " : ""}{t("。这不是用量或计费确认。")}</p>}
+    {!machineId && <p>{t("应用于下一条新任务，正在执行的任务保持原配置。")}</p>}
+    {machineId && <p>{t("新会话默认使用此配置，项目和会话可单独设置。")}</p>}
     {!data ? <p>{t("配置尚未读取。")}</p> : !data.catalog || data.catalog.error ? <p>{t("此主机暂未提供可用模型列表。请升级 Agent 或在主机页重连运行时。")}{locale() === "en" ? " " : ""}{data.catalog?.error}</p> : <>
-      {!machineId && <p>{t("已保存的来源：")}{locale() === "en" ? " " : ""}{labels[data.source]}{locale() === "en" ? " " : ""}{t("。展开后可直接修改下方选项，用于下次发送；保存后作为此会话的独立配置。")}</p>}
+      {!machineId && <p>{t("已保存的来源：")}{labels[data.source]}</p>}
       {changed && <p role="status">{machineId ? t("修改尚未保存，不影响会话默认值。") : t("当前选择尚未保存：仅用于下次发送，刷新后恢复已保存配置。")}</p>}
-      {!machineId && <p>{t("模型目录读取于")}{locale() === "en" ? " " : ""}{new Date(data.catalog.fetchedAt).toLocaleString(locale())}{locale() === "en" ? " " : ""}{t("。账号或模型权限变化后，请在主机页重连运行时。取消已保存的默认配置需清除对应范围的覆盖。")}</p>}
       <div className="codex-settings-fields">
       <label>{t("模型")}<select aria-label={machineId ? t("主机默认模型") : t("会话模型")} disabled={busy} value={choice?.model ?? ""} onChange={(event) => {
         const next = data.catalog!.models.find((item) => item.model === event.target.value);
@@ -84,6 +80,13 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
       <div className="codex-settings-save"><button type="button" className={`button ${machineId ? "button--primary" : "button--quiet"}`} disabled={busy || !valid || !saveChanged} onClick={() => void save()}>{machineId ? t("保存主机默认配置") : scope === "session" ? t("保存为此会话配置") : t("保存为项目默认配置")}</button><button type="button" className="button button--quiet" disabled={busy || !data.preferences[scope].settings} onClick={() => void save(true)}>{machineId ? t("清除主机默认配置") : t("恢复继承（清除此范围覆盖）")}</button></div>
       {!machineId && data.preferences.project.settings && <p>{t("此项目已有独立配置；清除会话覆盖后先继承项目。若要继承主机，请同时清除项目范围覆盖。")}</p>}
     </>}
+    <details className="settings-explanation"><summary>{t("配置说明与来源")}</summary>
+      <p>{t("新会话和未单独覆盖的会话继承这里；会话覆盖优先，其次是已有项目配置。不修改宿主机 config.toml 或正在运行的任务。")}</p>
+    {observed?.observed && <p>{t("最近读取：")}{locale() === "en" ? " " : ""}{observed.observed.model} · {observed.observed.effort ?? t("强度未上报")} · {new Date(observed.observed.observedAt).toLocaleString(locale())}</p>}
+    {observed?.accepted && <p>{t("主机上次接受：")}{locale() === "en" ? " " : ""}{observed.accepted.model} · {observed.accepted.effort ?? t("继承强度")} · {observed.accepted.mode === "plan" ? t("计划模式") : observed.accepted.mode === "default" ? t("执行模式") : t("继承模式")}{locale() === "en" ? " " : ""}{t("（不代表提供方绝无模型回退）")}</p>}
+    {observed?.accepted && (observed.accepted.serviceTier !== undefined || observed.accepted.personality) && <p>{t("上次接受的服务档位：")}{locale() === "en" ? " " : ""}{observed.accepted.serviceTier === null ? t("默认") : observed.accepted.serviceTier ?? t("继承")} {locale() === "en" ? " " : ""}{t("· 沟通风格：")}{locale() === "en" ? " " : ""}{observed.accepted.personality ?? t("继承")}{locale() === "en" ? " " : ""}{t("。这不是用量或计费确认。")}</p>}
+      {data?.catalog && <p>{t("模型目录读取于")}{locale() === "en" ? " " : ""}{new Date(data.catalog.fetchedAt).toLocaleString(locale())}{locale() === "en" ? " " : ""}{t("。账号或模型权限变化后，请在主机页重连运行时。取消已保存的默认配置需清除对应范围的覆盖。")}</p>}
+    </details>
     {message && <p role="status">{systemText(message)}</p>}
     <button type="button" className="catalog-more" disabled={busy} onClick={() => setRetry((value) => value + 1)}>{t("重新读取配置")}</button>
   </>;

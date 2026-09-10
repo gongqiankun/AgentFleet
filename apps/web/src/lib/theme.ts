@@ -15,7 +15,7 @@ function initialTheme(): Theme {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (isTheme(saved)) return saved;
   } catch { /* The default theme remains available when storage is blocked. */ }
-  return "cyber";
+  return "daylight";
 }
 
 let current = initialTheme();
@@ -24,9 +24,9 @@ function updateDocument() {
   if (typeof document === "undefined") return;
   document.documentElement.dataset.theme = current;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", {
-    cyber: "#070c17",
-    daylight: "#f2f6fb",
-    midnight: "#111018",
+    cyber: "#101923",
+    daylight: "#f5f5f7",
+    midnight: "#161618",
     forest: "#0d1813",
     eyecare: "#e8e5cf",
   }[current]);
@@ -46,7 +46,7 @@ export function useTheme() {
   return useSyncExternalStore(listener => {
     listeners.add(listener);
     return () => listeners.delete(listener);
-  }, theme, () => "cyber" as Theme);
+  }, theme, () => "daylight" as Theme);
 }
 
 updateDocument();

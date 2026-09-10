@@ -19,11 +19,11 @@ export function ThemeSwitcher({ onChange }: { onChange?: () => void } = {}) {
 }
 
 const themeOptions: { value: Theme; label: string; description: string }[] = [
-  { value: "cyber", label: "赛博朋克", description: "深蓝网格、霓虹信号与切角控件" },
-  { value: "daylight", label: "日光", description: "明亮画布、制图点阵与清晰边界" },
-  { value: "midnight", label: "午夜", description: "柔和深色、薰衣草高亮与圆润表面" },
-  { value: "forest", label: "森林", description: "深绿纹理、黄铜色与自然曲线" },
-  { value: "eyecare", label: "护眼", description: "暖米色、柔和墨绿与哑光纸感" },
+  { value: "cyber", label: "赛博朋克", description: "深蓝底色，清透青色点缀" },
+  { value: "daylight", label: "日光", description: "柔和浅灰，清晰蓝色与轻盈层次" },
+  { value: "midnight", label: "午夜", description: "柔和炭黑，适合夜间阅读" },
+  { value: "forest", label: "森林", description: "沉静深绿，温暖金色点缀" },
+  { value: "eyecare", label: "护眼", description: "温暖纸色，柔和墨绿文字" },
 ];
 
 export function ThemeSettings() {

@@ -10,7 +10,6 @@
   "会话本周消耗排名（前 10）": "Sessions by weekly cycle usage (top 10)",
   "本轮暂无已记录消耗。": "No recorded usage in this cycle.",
   "重置时间未知，暂不计算本周排名。": "Weekly rankings are unavailable until the reset time is known.",
-
   "从未连接": "Never connected",
   "未上报": "Not reported",
   "尚未发布": "Not published yet",
@@ -1361,5 +1360,23 @@
   "当前周额度周期：{0} 至 {1}": "Current weekly quota cycle: {0} to {1}",
   "跨越重置时刻且无法精确拆分的用量未计入本轮。": "Usage spanning the reset boundary that cannot be split precisely is excluded.",
   "尚未获取有效的下次周额度重置时间，暂不计算本轮用量。": "A valid next weekly reset time is unavailable; cycle usage is not calculated.",
-  "本轮按下次周额度重置时间倒推 7 天计算，仅包含已记录用量，不等于账号官方额度消耗。缓存和推理明细不能再次加到总量。": "This cycle starts 7 days before the next weekly reset. It includes recorded usage only, not official account quota consumption. Cached and reasoning tokens must not be added to the total again."
+  "本轮按下次周额度重置时间倒推 7 天计算，仅包含已记录用量，不等于账号官方额度消耗。缓存和推理明细不能再次加到总量。": "This cycle starts 7 days before the next weekly reset. It includes recorded usage only, not official account quota consumption. Cached and reasoning tokens must not be added to the total again.",
+  "打开已有会话，或新建会话开始。": "Open a conversation, or start a new one.",
+  "暂无待处理事项": "You’re all caught up",
+  "有新的确认请求或问题时，会在这里提醒你。": "New approval requests and questions will appear here.",
+  "查看需要你确认的操作和回答的问题。": "Review actions awaiting approval and questions that need your input.",
+  "可在其他设备继续，执行中的任务保持运行。": "Continue on another device while your tasks keep running.",
+  "管理主机与默认设置": "Manage host and defaults",
+  "暂无会话，点击 + 开始。": "No conversations yet. Select + to start.",
+  "选择阅读更舒适的外观，自动保存在此浏览器。": "Choose a comfortable appearance. Your preference is saved in this browser.",
+  "深蓝底色，清透青色点缀": "Deep blue with crisp cyan accents",
+  "柔和浅灰，清晰蓝色与轻盈层次": "Soft gray, clear blue, and quiet layers",
+  "柔和炭黑，适合夜间阅读": "Soft charcoal for reading after dark",
+  "沉静深绿，温暖金色点缀": "Calm forest green with warm gold accents",
+  "温暖纸色，柔和墨绿文字": "Warm paper with gentle green tones",
+  "更多会话操作": "More conversation actions",
+  "回车换行": "Return for a new line",
+  "应用于下一条新任务，正在执行的任务保持原配置。": "Applies to your next new task. Running tasks keep their current settings.",
+  "新会话默认使用此配置，项目和会话可单独设置。": "New conversations use these defaults. Projects and conversations can override them.",
+  "配置说明与来源": "Settings details and sources"
 }

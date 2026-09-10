@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 describe("theme switching", () => {
-  it("uses cyber by default and persists a selected theme", () => {
+  it("persists a selected theme and updates the browser chrome", () => {
     const meta = document.createElement("meta");
     meta.name = "theme-color";
     document.head.append(meta);

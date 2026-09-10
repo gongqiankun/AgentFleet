@@ -1,3 +1,5 @@
+import { SessionActions } from "./components/SessionActions";
+import { useMobileViewport } from "./lib/mobile-viewport";
 import { RuntimeSettingsShortcut } from "./components/RuntimeSettingsShortcut";
 import type { RuntimeSummary } from "./components/CodexSettingsPanel";
 import { UsageButton } from "./components/UsageButton";
@@ -27,7 +29,6 @@ import {
   LoaderCircle,
   LockKeyhole,
   LogOut,
-  Menu,
   MessageSquareText,
   MonitorDot,
   OctagonX,
@@ -245,6 +246,19 @@ function Login({ onLogin }: { onLogin: (dashboard: Dashboard) => void }) {
 }
 
 function MachineRail({ machines, sessions, connected, selectedId, onSelect, onPair, onSession, onHost }: { machines: Machine[]; sessions: FleetSession[]; connected: boolean; selectedId?: string; onSelect: (id: string) => void; onPair: () => void; onSession: (id: string) => void; onHost: (id: string) => void }) {
+  const track = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const reveal = () => {
+      const list = track.current;
+      const active = list?.querySelector<HTMLElement>(".machine-link--active");
+      if (list && active && list.scrollWidth > list.clientWidth) {
+        list.scrollLeft = active.offsetLeft - list.clientWidth / 2 + active.clientWidth / 2;
+      }
+    };
+    reveal();
+    window.addEventListener("resize", reveal);
+    return () => window.removeEventListener("resize", reveal);
+  }, [selectedId]);
   return (
     <aside className="machine-rail">
       <div className="rail-heading">
@@ -254,7 +268,7 @@ function MachineRail({ machines, sessions, connected, selectedId, onSelect, onPa
         </div>
         <IconButton label={t("配对新主机")} onClick={onPair}><Plus size={17} /></IconButton>
       </div>
-      <div className="rail-track" aria-label={t("已配对主机")}>
+      <div ref={track} className="rail-track" aria-label={t("已配对主机")}>
         {machines.length === 0 ? (
           <button className="rail-empty" onClick={onPair} type="button">
             <span className="rail-node rail-node--empty"><Plus size={15} /></span>
@@ -269,6 +283,7 @@ function MachineRail({ machines, sessions, connected, selectedId, onSelect, onPa
               type="button"
               key={machine.id}
               className={`machine-link${selectedId === machine.id ? " machine-link--active" : ""}`}
+              aria-pressed={selectedId === machine.id}
               onClick={() => onSelect(machine.id)}
             >
               <span className={`rail-node${live ? " rail-node--live" : ""}${live && (machine.capacity === "busy" || machine.capacity === "saturated") ? " rail-node--running" : ""}`}><Server size={15} /></span>
@@ -620,8 +635,8 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
   useAutoSizeTextarea(textArea, prompt, `${detail?.session.id ?? ""}:${loading}`);
   useEffect(() => { setConfiguration(undefined); setReleaseConfirming(false); setRawView(false); setCommandMessage(""); }, [detail?.session.id, draftOwner]);
 
-  if (loading) return <aside className="inspector inspector--loading"><LoaderCircle className="spin" size={22} /><span>{t("正在读取会话")}</span></aside>;
-  if (!detail) return <aside className="inspector inspector--empty"><MonitorDot size={27} /><h2>{t("选择一个会话")}</h2><p>{t("先选主机，再展开项目选择会话；也可以新建会话，直接开始和 Codex 对话。")}</p></aside>;
+  if (loading) return <aside className="inspector inspector--loading"><IconButton label={t("关闭会话详情")} className="inspector-back" onClick={onClose}><ChevronLeft size={22} /></IconButton><LoaderCircle className="spin" size={22} /><span>{t("正在读取会话")}</span></aside>;
+  if (!detail) return <aside className="inspector inspector--empty"><MonitorDot size={27} /><h2>{t("选择一个会话")}</h2><p>{t("打开已有会话，或新建会话开始。")}</p></aside>;
 
   const { session, approval } = detail;
   const rawEvents = rawView ? detail.events.filter(event => event.payloadState !== "deleted" && event.body) : [];
@@ -708,6 +723,7 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
   return (
     <aside className="inspector">
       <header className="inspector-head">
+        <IconButton label={t("关闭会话详情")} className="inspector-back" onClick={onClose}><ChevronLeft size={22} /></IconButton>
         <div className="eyebrow inspector-context" title={`${session.machineName} · ${session.projectAlias}`}>{session.machineName} · {session.projectAlias}</div>
         <div className="inspector-title-row">
           <h2 title={session.title}>{session.title}</h2>
@@ -717,19 +733,20 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
             <UsageButton scope="session" id={session.id}/>
           </div>
         <div className="inspector-head__actions">
-          <button type="button" className="button button--quiet session-config-trigger" aria-haspopup="dialog" onClick={() => setConfiguration({ section: "all", nonce: Date.now() })}><Settings2 size={16} />{t("会话配置")}</button>
-          <NativeSessionDeletion key={`delete:${draftOwner}:${session.id}`} session={session} commands={detail.commands ?? []} pending={pendingCommand} onChanged={onRefresh} />
-          <IconButton label={t("刷新会话")} onClick={onRefresh}><RefreshCw size={16} /></IconButton>
-          <IconButton label={t("关闭会话详情")} className="inspector-close" onClick={onClose}><X size={16} /></IconButton>
+          <button type="button" className="button button--quiet session-config-trigger" aria-haspopup="dialog" aria-label={t("会话配置")} title={t("会话配置")} onClick={() => setConfiguration({ section: "all", nonce: Date.now() })}><Settings2 size={18} /><span>{t("会话配置")}</span></button>
+          <SessionActions>
+            <button type="button" className="button button--quiet" onClick={onRefresh}><RefreshCw size={16} />{t("刷新会话")}</button>
+            <NativeSessionDeletion key={`delete:${draftOwner}:${session.id}`} session={session} commands={detail.commands ?? []} pending={pendingCommand} onChanged={onRefresh} />
+          </SessionActions>
         </div>
         </div>
       </header>
       {managed ? (
-        <div className={`lease-strip${lease?.isMine ? " lease-strip--mine" : ""}`}>
+        <div className={`lease-strip${lease?.isMine ? " lease-strip--mine" : ""}${(!lease || lease.isMine) && detail.releaseManagementSupported && !releaseConfirming ? " lease-strip--ready" : ""}`}>
           <span className="lease-strip__icon"><UserRoundCheck size={16} /></span>
           <div>
             <strong>{lease && !lease.isMine ? t("其他账号正在操作") : t("可从面板继续会话")}</strong>
-            <span>{!detail.releaseManagementSupported ? detail.releaseManagementBlockedReason : releaseConfirming ? t("等待主机释放面板写入占用；主机会话、本地和云端历史都会保留。有后台任务时不会强制交接") : lease && !lease.isMine ? t("等待对方操作结束后继续") : t("同一账号可换浏览器继续使用，无需手动交接；执行中的任务不会被打断")}</span>
+            <span>{!detail.releaseManagementSupported ? detail.releaseManagementBlockedReason : releaseConfirming ? t("等待主机释放面板写入占用；主机会话、本地和云端历史都会保留。有后台任务时不会强制交接") : lease && !lease.isMine ? t("等待对方操作结束后继续") : t("可在其他设备继续，执行中的任务保持运行。")}</span>
           </div>
           <div className="lease-strip__actions">
             {detail.releaseManagementSupported && (releaseConfirming ? (
@@ -805,6 +822,8 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
           rows={1}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+            // On a touch keyboard Return inserts a line; the visible Send button submits.
+            if (window.matchMedia?.("(max-width: 900px), (pointer: coarse)").matches && !event.ctrlKey && !event.metaKey) return;
             if ((event.ctrlKey || event.metaKey) && !event.altKey) {
               event.preventDefault();
               const input = event.currentTarget;
@@ -821,10 +840,11 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
           }}
         />
         <div className="composer-actions">
-          <span title={detail.writeBlockedReason || t("可直接粘贴截图，最多 4 张；Enter 发送，Ctrl / ⌘ + Enter 换行")}>{detail.writeBlockedReason || (canSend ? t("Enter 发送 · Ctrl / ⌘ + Enter 换行") : t("请先检查会话连接与执行状态"))}</span>
+          <span className="composer-keyboard-hint" title={detail.writeBlockedReason || t("可直接粘贴截图，最多 4 张；Enter 发送，Ctrl / ⌘ + Enter 换行")}>{detail.writeBlockedReason || (canSend ? t("Enter 发送 · Ctrl / ⌘ + Enter 换行") : t("请先检查会话连接与执行状态"))}</span>
+          <span className="composer-touch-hint">{detail.writeBlockedReason || (canSend || canQueueOrSteer ? t("回车换行") : t("请先检查会话连接与执行状态"))}</span>
           {canQueueOrSteer ? (
             <div className="active-turn-actions">
-              {canCancel && <button className="button button--stop" type="button" disabled={busy} onClick={async () => { setBusy(true); try { await onCancel(); } finally { setBusy(false); } }}><Square size={14} fill="currentColor" />{t("取消")}</button>}
+              {canCancel && <button className="button button--stop" type="button" disabled={busy} onClick={async () => { setBusy(true); try { await onCancel(); } finally { setBusy(false); } }}><Square size={14} fill="currentColor" />{t("停止任务")}</button>}
               <button className="button button--secondary" type="button" disabled={Boolean(slashCommand) || !hasInput || imageBlocked || busy || pendingCommand || session.actions?.queue?.allowed === false} onClick={async () => { setBusy(true); try { await onQueue(prompt.trim(), settings, imageDraft.images.length ? imageDraft.images : undefined); setPrompt(""); imageDraft.clear(); } catch (error) { setCommandMessage(errorMessage(error)); } finally { setBusy(false); } }}><Plus size={14} />{t("加入队列")}</button>
               <button className="button button--primary" type="button" disabled={Boolean(slashCommand) || !hasInput || imageBlocked || busy || pendingCommand || session.actions?.steer?.allowed === false} onClick={async () => { setBusy(true); try { await onSteer(prompt.trim(), imageDraft.images.length ? imageDraft.images : undefined); setPrompt(""); imageDraft.clear(); } catch (error) { setCommandMessage(errorMessage(error)); } finally { setBusy(false); } }}><ArrowRight size={14} />{t("追加本轮")}</button>
             </div>
@@ -843,9 +863,9 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
 export function ApprovalsView({ approvals, onOpen, onBack }: { approvals: Approval[]; onOpen: (id: string) => void; onBack: () => void }) {
   return (
     <section className="wide-view">
-      <div className="wide-view__heading"><div><h1>{t("待处理")}</h1><p>{t("Codex 需要你确认操作或回答问题时，会在这里提醒。打开对应会话，查看上下文后再处理。")}</p></div><KeyRound size={31} /></div>
+      <div className="wide-view__heading"><div><h1>{t("待处理")}</h1><p>{t("查看需要你确认的操作和回答的问题。")}</p></div><KeyRound size={31} /></div>
       <div className="request-explainer"><div><strong>{t("确认操作")}</strong><p>{t("需要你允许的命令或文件修改。你可以只允许这一次，也可以拒绝。")}</p></div><div><strong>{t("回答问题")}</strong><p>{t("Codex 需要了解你的选择或补充要求，例如计划模式中的提问。")}</p></div></div>
-      {approvals.length === 0 ? <div className="wide-empty request-empty"><Check size={30} /><h2>{t("暂时没有需要你处理的事项")}</h2><p>{t("这是正常状态，不是功能失效。有新请求时，顶部会自动出现提醒，也可在对应会话里处理。")}</p><button type="button" className="button button--primary" onClick={onBack}>{t("返回工作台")}</button></div> : (
+      {approvals.length === 0 ? <div className="wide-empty request-empty"><Check size={30} /><h2>{t("暂无待处理事项")}</h2><p>{t("有新的确认请求或问题时，会在这里提醒你。")}</p><button type="button" className="button button--primary" onClick={onBack}>{t("返回工作台")}</button></div> : (
         <div className="approval-grid">{approvals.map((approval) => <button type="button" key={approval.id} className="approval-preview" onClick={() => onOpen(approval.logicalSessionId)}><span className={`risk-stripe risk-stripe--${approval.risk}`} /><div><span className="request-kind">{approval.type === "user_input" ? t("需要回答") : t("需要确认")}</span><div className="eyebrow">{approval.machineName} · {approval.projectAlias}</div><h3>{approval.summary}</h3><p>{approval.command || approval.paths?.join(", ")}</p><span className="request-open">{t("打开会话处理 →")}</span></div><ChevronRight size={18} /></button>)}</div>
       )}
     </section>
@@ -974,7 +994,7 @@ function App() {
   const [createProject, setCreateProject] = useState<Project>();
   const [historyLoading, setHistoryLoading] = useState(false);
   const [removeMachine, setRemoveMachine] = useState<Machine>();
-  const [mobileMenu, setMobileMenu] = useState(false);
+  useMobileViewport();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const dashboardRef = useRef(dashboard);
   const detailRef = useRef(detail);
@@ -989,7 +1009,6 @@ function App() {
   const applyRoute = useCallback((next: AppRoute) => {
     routeRef.current = next;
     setRoute(next);
-    setMobileMenu(false);
     const id = next.sessionId;
     if (id !== selectedSessionRef.current) {
       selectedSessionRef.current = id;
@@ -1283,24 +1302,23 @@ function App() {
   function openApproval(sessionId: string) { selectSession(sessionId); }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${view === "fleet" && (displayedSession || detailLoading) ? " app-shell--conversation" : ""}`}>
       <header className="topbar">
         <div className="brand-lockup"><span className="brand-glyph"><Radio size={16} strokeWidth={2.6} /></span><span>AgentFleets</span></div>
-        <nav className={`primary-nav${mobileMenu ? " primary-nav--open" : ""}`} aria-label={t("主导航")}>
-          <button className={view === "fleet" ? "active" : ""} onClick={() => { setView("fleet"); setMobileMenu(false); }}><MonitorDot size={16} />{t("工作台")}</button>
-          <button className={view === "hosts" ? "active" : ""} onClick={() => { setView("hosts"); setMobileMenu(false); }}><Server size={16} />{t("主机")}</button>
-          {(dashboard.stats.approvals > 0 || view === "approvals") && <button className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); setMobileMenu(false); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>}
-          <button className={view === "security" ? "active" : ""} onClick={() => { setView("security"); setMobileMenu(false); }}><ShieldCheck size={16} />{t("设置")}</button>
-          <div className="mobile-theme-control"><ThemeSwitcher onChange={() => setMobileMenu(false)} /></div>
+        <nav className="primary-nav" aria-label={t("主导航")}>
+          <button aria-current={view === "fleet" ? "page" : undefined} className={view === "fleet" ? "active" : ""} onClick={() => { setView("fleet"); }}><MonitorDot size={16} />{t("工作台")}</button>
+          <button aria-current={view === "hosts" ? "page" : undefined} className={view === "hosts" ? "active" : ""} onClick={() => { setView("hosts"); }}><Server size={16} />{t("主机")}</button>
+          <button aria-current={view === "approvals" ? "page" : undefined} className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>
+          <button aria-current={view === "security" ? "page" : undefined} className={view === "security" ? "active" : ""} onClick={() => { setView("security"); }}><ShieldCheck size={16} />{t("设置")}</button>
         </nav>
-        <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton><IconButton label={t("打开菜单")} className="mobile-menu-button" onClick={() => setMobileMenu((value) => !value)}>{mobileMenu ? <X size={17} /> : <Menu size={17} />}</IconButton></div>
+        <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton></div>
       </header>
       {view === "fleet" ? <div className={`fleet-layout${catalogCollapsed ? " fleet-layout--catalog-collapsed" : ""}`}>
         <MachineRail machines={dashboard.machines} sessions={dashboard.activitySessions ?? dashboard.sessions} connected={connected} selectedId={selectedMachineId} onSession={selectSession} onHost={id => navigate({ view: "hosts", machineId: id })} onSelect={selectMachine} onPair={() => { setPairInitialCode(undefined); setPairOpen(true); }} />
         <main className="fleet-main">
           <div className="catalog-toggle-bar"><button type="button" className="catalog-toggle" aria-label={catalogCollapsed ? t("展开项目与会话") : t("收起项目与会话")} title={catalogCollapsed ? t("展开项目与会话") : t("收起项目与会话，让对话更宽")} aria-expanded={!catalogCollapsed} aria-controls="workbench-catalog" onClick={() => setCatalogCollapsed((value) => !value)}>{catalogCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}<span>{catalogCollapsed ? t("展开") : t("收起列表")}</span></button></div>
           <div id="workbench-catalog" className="fleet-catalog-content" role="region" aria-label={t("项目与会话列表")} tabIndex={0}>
-          {selectedMachine && <><MachineSummaryHeader machine={selectedMachine} onAliasChange={updateMachineAlias} /><button className="catalog-more" type="button" onClick={() => setView("hosts")}>{t("主机默认配置与管理 →")}</button>{selectedMachine.discovery?.state !== "ready" && <DiscoveryStatus discovery={selectedMachine.discovery} />}</>}
+          {selectedMachine && <><MachineSummaryHeader machine={selectedMachine} onAliasChange={updateMachineAlias} /><button className="catalog-more" type="button" onClick={() => setView("hosts")}>{t("管理主机与默认设置")}</button>{selectedMachine.discovery?.state !== "ready" && <DiscoveryStatus discovery={selectedMachine.discovery} />}</>}
           {route.machineId && !selectedMachine ? <section role="status"><h1>{t("该主机不存在或已移除")}</h1><p>{t("请从左侧选择其他主机，或添加新主机。")}</p></section> : <WorkspaceCatalog machineId={selectedMachineId} selectedSession={displayedSession} refreshKey={dashboard.serverTime} onSelect={selectSession} onCreate={openCreate} />}
           </div>
         </main>
