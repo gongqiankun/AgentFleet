@@ -196,11 +196,90 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
 [data-theme="forest"] .login-panel { border-radius: 6px 24px 6px 24px; background: rgb(19 35 27 / .95); }
 [data-theme="forest"] .login-panel::before { width: 72px; height: 2px; border-radius: 99px; box-shadow: none; }
 
-/* Settings shows the full choice as visual samples; the header remains the quick switch. */
+/* Eye care: warm matte paper, restrained moss, and soft reading-room geometry. */
+:root[data-theme="eyecare"] {
+  color-scheme: light;
+  --canvas: #e8e5cf;
+  --paper: #f5f3e7;
+  --paper-solid: #dfe3cf;
+  --terminal: #d7dcc7;
+  --ink: #28372c;
+  --muted: #536658;
+  --faint: #566a5b;
+  --line: #bdc6b4;
+  --line-strong: #748570;
+  --cobalt: #3f684e;
+  --cobalt-deep: #31573f;
+  --cobalt-soft: #d4dfcf;
+  --teal: #27644f;
+  --teal-soft: #d1e3d9;
+  --amber: #7a561d;
+  --amber-soft: #ebe0c6;
+  --red: #94423d;
+  --red-soft: #ebd7d0;
+  --magenta: #6f526c;
+  --magenta-soft: #e4d9df;
+  --shadow: 0 10px 30px rgb(63 71 51 / .09), 0 1px 2px rgb(63 71 51 / .08);
+  --radius-sm: 7px;
+  --radius-md: 11px;
+  --radius-lg: 15px;
+}
+
+[data-theme="eyecare"] body { background-color: var(--canvas); background-image: radial-gradient(ellipse at 80% 0, rgb(78 118 82 / .08), transparent 36%), repeating-linear-gradient(0deg, transparent 0 27px, rgb(73 83 60 / .025) 28px); background-attachment: fixed; }
+[data-theme="eyecare"] ::selection { color: #f8f5e5; background: var(--cobalt-deep); }
+[data-theme="eyecare"] button:focus-visible,
+[data-theme="eyecare"] a:focus-visible,
+[data-theme="eyecare"] summary:focus-visible,
+[data-theme="eyecare"] input:focus-visible,
+[data-theme="eyecare"] textarea:focus-visible,
+[data-theme="eyecare"] select:focus-visible { outline-color: var(--cobalt-deep); box-shadow: 0 0 0 4px rgb(78 118 82 / .16); }
+[data-theme="eyecare"] .topbar { border-top: 0; background: rgb(245 243 231 / .94); border-bottom: 1px solid var(--line-strong); box-shadow: 0 2px 12px rgb(63 71 51 / .06); }
+[data-theme="eyecare"] .brand-lockup { font-family: "Manrope Variable", sans-serif; font-weight: 740; letter-spacing: -.035em; }
+[data-theme="eyecare"] .brand-glyph { color: var(--cobalt-deep); background: var(--paper); border: 1px solid var(--cobalt); border-radius: 8px; box-shadow: inset 0 0 0 3px var(--cobalt-soft); }
+[data-theme="eyecare"] .primary-nav button { border-radius: 8px; }
+[data-theme="eyecare"] .primary-nav button.active { color: var(--cobalt-deep); background: var(--cobalt-soft); border-color: transparent; box-shadow: inset 0 -2px var(--cobalt); }
+[data-theme="eyecare"] .machine-rail { background: rgb(243 240 221 / .72); }
+[data-theme="eyecare"] .rail-node { border-radius: 9px; background: var(--paper); box-shadow: inset 0 0 0 2px rgb(78 118 82 / .06); }
+[data-theme="eyecare"] .machine-link { border-radius: 10px; }
+[data-theme="eyecare"] .machine-link--active { background: var(--cobalt-soft); box-shadow: inset 3px 0 var(--cobalt); }
+[data-theme="eyecare"] .rail-node--running,
+[data-theme="eyecare"] .status-dot--live { box-shadow: 0 0 8px rgb(39 100 79 / .2); }
+[data-theme="eyecare"] .button,
+[data-theme="eyecare"] .icon-button { border-radius: 9px; }
+[data-theme="eyecare"] .button--primary,
+[data-theme="eyecare"] .button--share { box-shadow: 0 3px 9px rgb(49 87 63 / .15); }
+[data-theme="eyecare"] .button--primary:hover:not(:disabled),
+[data-theme="eyecare"] .button--share:hover:not(:disabled) { box-shadow: 0 4px 12px rgb(49 87 63 / .2); }
+[data-theme="eyecare"] .session-list-panel,
+[data-theme="eyecare"] .host-card,
+[data-theme="eyecare"] .settings-block,
+[data-theme="eyecare"] .modal { border-color: var(--line-strong); border-radius: 14px; background: var(--paper); box-shadow: 0 5px 18px rgb(63 71 51 / .07); }
+[data-theme="eyecare"] .host-card::before { left: 18px; right: 18px; width: auto; height: 2px; background: var(--cobalt); opacity: .38; }
+[data-theme="eyecare"] .host-card--selected { background: linear-gradient(145deg, var(--cobalt-soft), var(--paper)); box-shadow: inset 0 0 0 1px var(--cobalt), 0 6px 20px rgb(63 71 51 / .09); }
+[data-theme="eyecare"] .inspector-head { background: var(--paper); box-shadow: inset 0 2px var(--cobalt); }
+[data-theme="eyecare"] .composer textarea:focus { border-color: var(--cobalt); box-shadow: 0 0 0 3px rgb(63 104 78 / .12); }
+[data-theme="eyecare"] .host-disclosure,
+[data-theme="eyecare"] .settings-section,
+[data-theme="eyecare"] .runtime-release-panel { box-shadow: 0 5px 18px rgb(63 71 51 / .07); }
+[data-theme="eyecare"] .activity-panel { border-radius: 14px; box-shadow: var(--shadow); }
+[data-theme="eyecare"] input,
+[data-theme="eyecare"] textarea,
+[data-theme="eyecare"] select,
+[data-theme="eyecare"] .command-block,
+[data-theme="eyecare"] .output-block { background: var(--paper-solid); color: var(--ink); }
+[data-theme="eyecare"] .login-shell { background: radial-gradient(ellipse at 18% 20%, rgb(78 118 82 / .1), transparent 34%), repeating-linear-gradient(0deg, transparent 0 27px, rgb(73 83 60 / .025) 28px), var(--canvas); }
+[data-theme="eyecare"] .login-mark::before { width: 3px; background: linear-gradient(transparent, var(--cobalt), transparent); }
+[data-theme="eyecare"] .login-mark span { border-radius: 12px; transform: rotate(8deg); border-color: var(--cobalt); box-shadow: inset 0 0 0 7px var(--cobalt-soft); }
+[data-theme="eyecare"] .login-panel { border-radius: 18px; background: rgb(245 243 231 / .96); border-color: var(--line-strong); box-shadow: var(--shadow); }
+[data-theme="eyecare"] .login-panel::before { width: 84px; height: 3px; border-radius: 99px; background: var(--cobalt); box-shadow: none; }
+[data-theme="eyecare"] .modal-backdrop,
+[data-theme="eyecare"] .session-config-dialog::backdrop { background: rgb(48 58 45 / .38); }
+
+/* Settings shows full visual samples; the rail and mobile menu provide quick switching. */
 .theme-settings-block { grid-column: 1 / -1; }
 .settings-view .theme-settings-block > h2 { display: flex; align-items: center; gap: 8px; }
 .settings-view .theme-settings-block > h2 svg { color: var(--cobalt); }
-.theme-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.theme-options { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .theme-option {
   --sample-canvas: #070c17;
   --sample-paper: #111d30;
@@ -224,6 +303,7 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
 .theme-option--daylight { --sample-canvas: #f2f6fb; --sample-paper: #fff; --sample-line: #aebed0; --sample-accent: #1769e0; }
 .theme-option--midnight { --sample-canvas: #111018; --sample-paper: #232130; --sample-line: #4c475e; --sample-accent: #a995ff; }
 .theme-option--forest { --sample-canvas: #0d1813; --sample-paper: #1b3025; --sample-line: #42634f; --sample-accent: #e2b95f; }
+.theme-option--eyecare { --sample-canvas: #e8e5cf; --sample-paper: #f5f3e7; --sample-line: #748570; --sample-accent: #3f684e; }
 .theme-option__preview { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 5px; width: 74px; height: 48px; padding: 6px; overflow: hidden; background: var(--sample-canvas); border: 1px solid var(--sample-line); border-radius: calc(var(--radius-sm) * .7); }
 .theme-option__preview::before { content: ""; grid-row: 1 / 4; background: var(--sample-paper); border-right: 1px solid var(--sample-line); }
 .theme-option__preview i { display: block; height: 5px; background: var(--sample-paper); border-radius: 2px; }
@@ -246,6 +326,10 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
   .topbar-actions { gap: 5px; }
   .topbar-actions .language-switcher svg { display: none; }
   .topbar-actions .language-switcher select { max-width: 82px; }
+}
+
+@media (max-width: 1200px) {
+  .theme-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 660px) {

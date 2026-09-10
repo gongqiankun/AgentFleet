@@ -17,20 +17,20 @@ describe("theme switching", () => {
     document.head.append(meta);
     setTheme("cyber");
     render(<ThemeSwitcher />);
-    fireEvent.change(screen.getByRole("combobox", { name: "界面主题" }), { target: { value: "daylight" } });
-    expect(document.documentElement.dataset.theme).toBe("daylight");
-    expect(localStorage.getItem("agentfleet.theme")).toBe("daylight");
-    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute("content")).toBe("#f2f6fb");
+    fireEvent.change(screen.getByRole("combobox", { name: "界面主题" }), { target: { value: "eyecare" } });
+    expect(document.documentElement.dataset.theme).toBe("eyecare");
+    expect(localStorage.getItem("agentfleet.theme")).toBe("eyecare");
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute("content")).toBe("#e8e5cf");
     meta.remove();
   });
 
   it("offers a complete theme picker for settings", () => {
     setTheme("cyber");
     render(<ThemeSettings />);
-    const forest = screen.getByRole("radio", { name: /森林/ });
-    expect(screen.getAllByRole("radio")).toHaveLength(4);
-    fireEvent.click(forest);
-    expect(forest.getAttribute("aria-checked")).toBe("true");
-    expect(document.documentElement.dataset.theme).toBe("forest");
+    const eyecare = screen.getByRole("radio", { name: /护眼/ });
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
+    fireEvent.click(eyecare);
+    expect(eyecare.getAttribute("aria-checked")).toBe("true");
+    expect(document.documentElement.dataset.theme).toBe("eyecare");
   });
 });
