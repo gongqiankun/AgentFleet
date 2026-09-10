@@ -1,3 +1,5 @@
+import { RuntimeSettingsShortcut } from "./components/RuntimeSettingsShortcut";
+import type { RuntimeSummary } from "./components/CodexSettingsPanel";
 import { UsageButton } from "./components/UsageButton";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { count, t, locale, systemText, useLocale } from "./i18n";
@@ -605,6 +607,7 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
   const imageDraft = useImageDraft(draftOwner ?? "preview", detail?.session.id);
   const [configuration, setConfiguration] = useState<ConfigurationRequest>();
   const [runtimeChoice, setRuntimeChoice] = useState<RuntimeChoice>();
+  const [runtimeSummary, setRuntimeSummary] = useState<RuntimeSummary>();
   const [commandMessage, setCommandMessage] = useState("");
   const [rawView, setRawView] = useState(false);
   const [nativeRequest, setNativeRequest] = useState<{ sessionId: string; action: NativeOperation; args: string; nonce: number }>();
@@ -770,7 +773,7 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
       <SessionConfiguration key={`config:${draftOwner}:${session.id}`} request={configuration} title={session.title} onClose={() => setConfiguration(undefined)}>
         {configuration && commandMessage && <p className="codex-command-message" role="status">{systemText(commandMessage)}</p>}
         <OperationReceipts commands={detail.commands ?? []} mode="recent" />
-        <CodexSettingsPanel key={`${draftOwner}:${session.id}`} sessionId={session.id} observed={session.runtimeSettings} onChange={setRuntimeChoice} />
+        <CodexSettingsPanel key={`${draftOwner}:${session.id}`} sessionId={session.id} observed={session.runtimeSettings} onChange={setRuntimeChoice} onSummary={setRuntimeSummary} />
         <PermissionPanel key={`permissions:${session.id}`} sessionId={session.id} observed={session.runtimeSettings} />
         <details className="composer-tools session-config-section" key={`tools:${draftOwner}:${session.id}`}><summary><span>{t("更多工具与命令")}<small>{t("原生会话操作、环境查询与命令说明")}</small></span></summary><p>{t("重命名、归档、环境查询和 / 命令。日常对话直接在下方发送消息即可。")}</p>
           <NativeSessionActions key={`native:${draftOwner}:${session.id}`} session={session} request={nativeRequest?.sessionId === session.id ? nativeRequest : undefined} pending={pendingCommand} onChanged={onRefresh} />
@@ -784,6 +787,7 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
         {!configuration && commandMessage && <p className="codex-command-message" role="status">{systemText(commandMessage)}</p>}
         {(!managed || (lease && !lease.isMine && !canQueueOrSteer)) && <div className="composer-lock"><LockKeyhole size={14} />{!managed ? systemText(detail.writeBlockedReason) : t("其他窗口正在控制，草稿会保存在当前会话")}</div>}
         {canQueueOrSteer && <div className="composer-mode"><Activity size={14} />{t("Codex 正在处理：可补充当前任务，或排到下一轮")}</div>}
+        <RuntimeSettingsShortcut sessionId={session.id} summary={runtimeSummary} observed={session.runtimeSettings} running={canQueueOrSteer} onOpen={() => setConfiguration({ section: "settings", nonce: Date.now() })}/>
         <div className="composer-input">
         {imageDraft.images.length > 0 && <MessageImages images={imageDraft.images} onRemove={imageDraft.remove} disabled={busy || imageDraft.processing} />}
         {imageDraft.processing && <p className="image-draft-notice" role="status">{t("正在处理粘贴的图片…")}</p>}

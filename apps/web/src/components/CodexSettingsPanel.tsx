@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 import type { CodexPreferences, CodexSettings, RuntimeSettings } from "../lib/codex-settings";
 
+export type RuntimeSummary = { sessionId: string; source?: CodexPreferences["source"]; settings?: CodexSettings; changed: boolean; loaded: boolean; failed?: boolean };
 export type RuntimeChoice = { sessionId: string; settings?: CodexSettings };
 const ignoreChoice = (_choice: RuntimeChoice) => {};
-export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChange = ignoreChoice }: { sessionId?: string; machineId?: string; observed?: RuntimeSettings | null; onChange?: (choice: RuntimeChoice) => void }) {
+export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChange = ignoreChoice, onSummary }: { sessionId?: string; machineId?: string; observed?: RuntimeSettings | null; onChange?: (choice: RuntimeChoice) => void; onSummary?: (summary: RuntimeSummary) => void }) {
   const [data, setData] = useState<CodexPreferences>();
   const [choice, setChoice] = useState<CodexSettings>();
   const [scope, setScope] = useState<"machine" | "project" | "session">(machineId ? "machine" : "session");
@@ -41,6 +42,9 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
   }
   const labels = { machine: t("主机默认"), project: t("项目默认"), session: t("会话覆盖"), codex: t("Codex 自身配置") };
   const changed = data && JSON.stringify(choice ?? null) !== JSON.stringify(data.desired);
+  useEffect(() => {
+    onSummary?.({ sessionId, source: data?.source, settings: choice, changed: Boolean(changed), loaded: Boolean(data), failed: !data && Boolean(message) });
+  }, [sessionId, data, choice, changed, message, onSummary]);
   const summary = data ? `${changed ? t("未保存的选择") : labels[data.source]} · ${choice?.model ?? t("继承 Codex")} · ${choice?.effort ?? t("继承强度")} · ${choice?.mode === "plan" ? t("计划") : choice?.mode === "default" ? t("执行") : t("继承模式")}` : t("读取中");
   const content = <>
     {!machineId && <p>{t("Codex 程序版本不是模型名称。以下设置仅用于新一轮，不改变历史消息。")}</p>}

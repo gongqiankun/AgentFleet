@@ -17,6 +17,10 @@ export function SessionConfiguration({ request, title, onClose, children }: {
     const selector = { all: "", settings: ".codex-settings-panel", permissions: ".permission-panel", tools: ".composer-tools", help: ".composer-tools" }[request.section];
     const panel = selector ? element.querySelector<HTMLDetailsElement>(selector) : null;
     if (panel) { panel.open = true; panel.scrollIntoView({ block: "nearest" }); }
+    if (request.section === "settings") {
+      const model = element.querySelector<HTMLSelectElement>(".codex-settings-fields select");
+      model?.scrollIntoView({ block: "center" }); model?.focus({ preventScroll: true });
+    }
     if (request.section === "help") {
       const guide = element.querySelector<HTMLDetailsElement>(".codex-command-guide");
       if (guide) { guide.open = true; guide.scrollIntoView({ block: "nearest" }); }

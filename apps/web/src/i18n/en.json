@@ -1311,5 +1311,13 @@
   "刷新主机信息与额度": "Refresh host information and quota",
   "已请求主机刷新，结果以更新时间为准。": "Host refresh requested. Check the updated timestamp for new data.",
   "暂时无法请求刷新，请确认主机在线且没有其他维护操作。": "Unable to request a refresh. Check that the host is online and has no other maintenance in progress.",
-  "未记录": "Not recorded"
+  "未记录": "Not recorded",
+  "本次": "This turn",
+  "模型未上报": "Model not reported",
+  "读取模型配置…": "Loading model settings…",
+  "点击配置下次发送的模型与推理强度": "Configure the model and reasoning effort for your next message",
+  "模型信息来自最近一次主机记录": "Model information is from the latest host record",
+  "快速配置模型与推理强度": "Quick model and reasoning settings",
+  "下轮": "Next turn",
+  "模型配置暂不可用": "Model settings unavailable"
 }

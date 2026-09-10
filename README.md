@@ -64,6 +64,8 @@ Counts and open lists update as reported state changes. **Controlled means curre
 
 ### Model and reasoning settings that follow your workflow
 
+A compact line above the message box shows the inherited or selected model and reasoning effort. Click it to jump directly to model settings; changes apply to the next turn, and unsaved choices are labeled.
+
 Keep using Codex's own configuration when no panel override is set. Or save host defaults once and make exceptions for a particular session. Existing project defaults participate in the same precedence:
 
 **Session settings → project settings → host defaults → Codex's own configuration** (highest priority first).
