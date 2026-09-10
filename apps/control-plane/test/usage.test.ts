@@ -8,6 +8,7 @@ import { ControlPlaneDatabase } from "../src/db.js";
 import { loadConfig } from "../src/config.js";
 import { CoordinationService } from "../src/coordination.js";
 import { payloadHash } from "../src/crypto.js";
+import { RegistryService } from "../src/registry.js";
 import { UsageService } from "../src/usage.js";
 import { buildControlPlane } from "../src/server.js";
 const config=()=>({...loadConfig({ADMIN_EMAIL:"usage@example.test",ADMIN_PASSWORD:randomUUID(),DATABASE_PATH:":memory:",PUBLIC_ORIGIN:"http://usage.test",COOKIE_SECURE:"false"}),databasePath:":memory:"});
@@ -93,4 +94,16 @@ test("durable ingress deduplicates usage and fences stale or content-disabled re
  db.run("UPDATE projects SET sync_content=0 WHERE project_id='p-a'");
  assert.equal(coordinator.appendEvent(connection,make(3,300)).ok,true);
  assert.equal(service.read(workspaceId,"session","a1").recorded?.totalTokens,10);
+});
+
+test("session list usage matches detail counters, includes zero, and keeps missing usage null",t=>{
+ const {db,workspaceId,service,at}=fixture();t.after(()=>db.close());
+ for(const id of ["a1","a2","b1","b2"])db.run("INSERT INTO execution_segments(execution_segment_id,logical_session_id,machine_id,project_id,native_thread_id,created_at) VALUES(?,?,?,?,?,?)",`segment-${id}`,id,id[0]!,`p-${id[0]}`,`native-${id}`,at);
+ service.record(event("a1",100,3));service.record(event("a2",0,0));
+ const principal={workspaceId,userId:"test-user",clientSessionId:"test-client",email:"test@example.test",csrfHash:"test",expiresAt:at};
+ const registry=new RegistryService(db,config());
+ const items=registry.listSessionsPage(principal,{projectId:"p-a",limit:30}).items;
+ assert.equal(items.find(s=>s.logicalSessionId==="a1")?.recordedTokens,service.read(workspaceId,"session","a1").recorded?.totalTokens);
+ assert.equal(items.find(s=>s.logicalSessionId==="a2")?.recordedTokens,0);
+ assert.equal(registry.getSession(principal,"b1").recordedTokens,null);
 });

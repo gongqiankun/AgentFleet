@@ -2776,11 +2776,13 @@ export class RegistryService {
       runtime_settings_json: string | null;
       project_alias: string;
       canonical_root: string;
+      recorded_tokens: number | null;
     }>(
       `SELECT s.*,e.execution_segment_id,e.native_thread_id,e.history_completeness,e.history_mode,
-        p.lease_version AS project_lease_version,p.alias AS project_alias,p.canonical_root FROM logical_sessions s
+        p.lease_version AS project_lease_version,p.alias AS project_alias,p.canonical_root,json_extract(u.recorded_json,'$.totalTokens') AS recorded_tokens FROM logical_sessions s
        JOIN execution_segments e ON e.logical_session_id=s.logical_session_id AND e.ended_at IS NULL
        JOIN projects p ON p.project_id=s.project_id
+       LEFT JOIN session_usage u ON u.logical_session_id=s.logical_session_id
        WHERE s.logical_session_id=? AND s.workspace_id=? AND s.deleted_at IS NULL ORDER BY e.created_at DESC LIMIT 1`,
       logicalSessionId,
       principal.workspaceId,
@@ -2788,6 +2790,7 @@ export class RegistryService {
     invariant(row, 404, "SESSION_NOT_FOUND", "Logical Session was not found");
     return {
       logicalSessionId: row.logical_session_id,
+      recordedTokens: row.recorded_tokens,
       machineId: row.machine_id,
       imageInputSupported: JSON.parse(this.db.get<{ codex_catalog_json: string | null }>("SELECT codex_catalog_json FROM machines WHERE machine_id=?", row.machine_id)?.codex_catalog_json ?? "null")?.imageInput === true,
       cloudImageRevision: this.db.get<{ cloud_image_revision: number }>("SELECT cloud_image_revision FROM machines WHERE machine_id=?", row.machine_id)?.cloud_image_revision ?? 0,

@@ -87,3 +87,16 @@ it("已取消的慢刷新不会覆盖最新会话", async () => {
   expect(screen.getByText("会话 latest")).toBeTruthy();
   expect(screen.queryByText("会话 stale")).toBeNull();
 });
+
+it("会话行在历史标记右侧展示独立 token 数，并区分零和未记录", async () => {
+  vi.mocked(api.sessions).mockResolvedValue({ items: [{...row("used"),recordedTokens:1200},{...row("zero"),recordedTokens:0},row("missing")], nextCursor:null });
+  const {container}=render(<WorkspaceCatalog {...props} refreshKey="usage" />);
+  fireEvent.click(await screen.findByRole("button",{name:/测试项目 \/srv/}));
+  await screen.findByText("会话 used");
+  const labels=container.querySelectorAll(".session-row__tokens");
+  expect(labels).toHaveLength(3);
+  expect(labels[0].getAttribute("title")).toBe("已记录 1,200 tokens");
+  expect(labels[0].previousElementSibling?.className).toBe("history-mark");
+  expect(labels[1].textContent).toBe("已记录 0 tokens");
+  expect(labels[2].textContent).toBe("未记录");
+});

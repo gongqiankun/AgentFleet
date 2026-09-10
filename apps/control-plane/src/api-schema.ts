@@ -135,6 +135,7 @@ export interface ControlLeaseView {
 }
 
 export interface LogicalSessionSummary {
+  recordedTokens?: number | null;
   imageInputSupported?: boolean;
   cloudImageRevision?: number;
   runtimeSettings?: Record<string, unknown> | null;

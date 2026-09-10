@@ -113,6 +113,7 @@ export interface SessionState {
 }
 
 export interface FleetSession {
+  recordedTokens?: number | null;
   imageInputSupported?: boolean;
   cloudImageRevision?: number;
   runtimeSettings?: import("./codex-settings").RuntimeSettings | null;

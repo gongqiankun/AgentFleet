@@ -250,6 +250,7 @@ function mapSession(
       : "metadata_only";
 
   return {
+    recordedTokens: typeof raw.recordedTokens === "number" && Number.isSafeInteger(raw.recordedTokens) && raw.recordedTokens >= 0 ? raw.recordedTokens : null,
     id: string(raw.logicalSessionId),
     runtimeSettings: raw.runtimeSettings as FleetSession["runtimeSettings"],
     title: string(raw.title, t("未命名会话")),

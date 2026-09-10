@@ -1206,3 +1206,6 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .usage-ranking li { padding: 8px 0; overflow-wrap: anywhere; }
 .usage-ranking a, .usage-ranking button { color: #52dbf5; }
 .usage-ranking strong { display: block; font-variant-numeric: tabular-nums; }
+
+.session-row__bottom { flex-wrap: wrap; }
+.session-row__tokens { color: #9bb0ca; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

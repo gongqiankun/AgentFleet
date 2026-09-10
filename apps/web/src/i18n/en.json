@@ -1310,5 +1310,6 @@
   "消耗最多的项目（前 10）": "Top 10 projects by usage",
   "刷新主机信息与额度": "Refresh host information and quota",
   "已请求主机刷新，结果以更新时间为准。": "Host refresh requested. Check the updated timestamp for new data.",
-  "暂时无法请求刷新，请确认主机在线且没有其他维护操作。": "Unable to request a refresh. Check that the host is online and has no other maintenance in progress."
+  "暂时无法请求刷新，请确认主机在线且没有其他维护操作。": "Unable to request a refresh. Check that the host is online and has no other maintenance in progress.",
+  "未记录": "Not recorded"
 }
