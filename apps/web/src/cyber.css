@@ -210,3 +210,22 @@ html[lang="en"] .session-config-trigger { white-space:nowrap; }
 .inspector-head__actions { flex:0 1 auto; max-width:100%; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
 .inspector .inspector-head__actions .button { min-height:28px; height:28px; box-sizing:border-box; padding:5px 8px; font-size:11px; line-height:16px; gap:5px; white-space:nowrap; }
 @media(max-width:400px) { .inspector .inspector-head__actions .button { font-size:10px; padding-inline:6px; } }
+
+/* Adapt to the session pane, including list expansion on wide screens. */
+.inspector { container: session-pane / inline-size; }
+.inspector .session-facts { min-width: 0; }
+@container session-pane (max-width: 640px) {
+  .inspector-head { position: relative; }
+  .inspector-context { padding-right: 36px; min-height: 18px; }
+  .inspector-title-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .session-facts { flex-wrap: wrap; width: 100%; }
+  .session-facts > .usage-trigger { margin-left: auto; }
+  .inspector-head__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-left: 0; gap: 8px; }
+  .inspector-head__actions > .button { justify-content: center; min-width: 0; }
+  .inspector-head__actions > .icon-button { position: absolute; top: 8px; right: 12px; }
+  @media (max-width: 900px) {
+    .inspector-context { padding-right: 72px; }
+    .inspector-head__actions > .icon-button:not(.inspector-close) { right: 46px; }
+  }
+}
+.inspector .session-facts > .usage-trigger { min-height: 28px; height: 28px; box-sizing: border-box; padding: 5px 8px; font-size: 11px; line-height: 16px; gap: 5px; white-space: nowrap; }

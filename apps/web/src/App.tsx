@@ -710,9 +710,9 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
           <div className="session-facts">
             <StatePill session={session} />
             <span className={`history-mark history-mark--${session.state.history}`}>{{ complete: t("完整历史"), partial: t("部分历史"), summary_only: t("历史摘要"), metadata_only: t("仅会话信息"), unavailable: t("历史暂不可用") }[session.state.history]}</span>
+            <UsageButton scope="session" id={session.id}/>
           </div>
         <div className="inspector-head__actions">
-          <UsageButton scope="session" id={session.id}/>
           <button type="button" className="button button--quiet session-config-trigger" aria-haspopup="dialog" onClick={() => setConfiguration({ section: "all", nonce: Date.now() })}><Settings2 size={16} />{t("会话配置")}</button>
           <NativeSessionDeletion key={`delete:${draftOwner}:${session.id}`} session={session} commands={detail.commands ?? []} pending={pendingCommand} onChanged={onRefresh} />
           <IconButton label={t("刷新会话")} onClick={onRefresh}><RefreshCw size={16} /></IconButton>
