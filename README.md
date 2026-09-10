@@ -34,6 +34,7 @@ Think of each enrolled host as a place where Codex executes work, and AgentFleet
 | **Graphical Codex session management** | Browse hosts, projects, and conversations; continue native sessions; adjust model settings and execution permissions in the panel. |
 | **Images from your browser to a remote session** | Paste a screenshot, preview it, and send it with your instructions to Codex on the selected host, without manually copying the image to that server first. |
 | **An overview across multiple hosts** | Follow running work, return to completed-but-controlled sessions, queue follow-up messages, and inspect recorded tokens and reported account quota. |
+| **Switchable interface themes** | Use Cyberpunk by default, or switch to Daylight, Midnight, Forest, or the warm Eye Care theme. Each changes the palette, surfaces, borders, and atmosphere rather than only swapping accent colors. |
 
 ### Visual context, even on a headless server
 
@@ -96,11 +97,19 @@ Keep using Codex's own configuration when no panel override is set. Or save host
 
 For example, keep a host's everyday model and reasoning effort as its default, then give one demanding session a different supported model or deeper reasoning. Clear that session's override to return to the applicable defaults. Where the host runtime supports them, the panel also exposes plan/execution mode, service tier, and communication style.
 
+The save button tracks the selected target scope. It is disabled when the form already matches the saved host, project, or session configuration; editing a value enables it, and a successful save or reverting to the saved values disables it again. This makes pending configuration changes visible before the next send.
+
 - **Fewer repeated choices:** reuse saved settings across sessions instead of selecting the model and reasoning effort every time.
 - **Visible configuration:** inspect the selected source, recently observed runtime values, and the settings last accepted by the host. A saved preference is not proof of the provider's final model choice.
 - **Controlled changes:** saved defaults are used for subsequent sends; they do not rewrite the host's `config.toml` or change a turn already running. Choices are validated against the host's reported capabilities.
 
 Together with direct access to running and completed-but-controlled sessions, native-session continuity, message queues, and explicit recovery, these are the workflows AgentFleets focuses on making easier. They are practical product strengths, not claims that other Codex clients lack similar features.
+
+### Themes for different working environments
+
+Cyberpunk remains the default theme. Daylight uses a bright drafting-board treatment, Midnight uses softer dark surfaces and lavender highlights, Forest combines deep green texture with brass tones, and Eye Care uses warm ivory, muted moss, and a matte paper feel for a gentler reading surface.
+
+On desktop, use the theme control below **Controlled** in the left sidebar. On narrow screens, open the navigation menu; the full theme selector is also available in Settings. The layout adapts to mobile widths, and the selected theme is remembered in the current browser.
 
 ### Know what is using your quota
 
