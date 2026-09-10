@@ -1209,3 +1209,6 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 
 .session-row__bottom { flex-wrap: wrap; }
 .session-row__tokens { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+.usage-trigger-text { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.usage-trigger-text small { font-size: 10px; font-weight: 400; line-height: 1.4; opacity: .75; }

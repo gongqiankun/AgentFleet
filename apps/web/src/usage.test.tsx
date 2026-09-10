@@ -31,7 +31,7 @@ it("does not turn missing telemetry into zero or retain another scope's result",
 });
 it("labels stale account snapshots and English UI explicitly",async()=>{
  setLocale("en");vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine",accounts:[{...data.accounts[0],stale:true}]});
- render(<UsageButton scope="machine" id="m1"/>);fireEvent.click(await screen.findByRole("button",{name:"Weekly quota: 38% remaining"}));
+ render(<UsageButton scope="machine" id="m1"/>);fireEvent.click(await screen.findByRole("button",{name:/Weekly quota: 38% remaining/}));
  expect(await screen.findByText(/Out of date/)).toBeTruthy();expect(screen.getByText("Account quota (shared)")).toBeTruthy();
 });
 
@@ -39,14 +39,14 @@ it("keeps quota discoverable with multiple model windows and no session token re
  const account={...data.accounts[0],windows:[data.accounts[0].windows[0],{...data.accounts[0].windows[0],bucket:"model-specific",usedPercent:0,remainingPercent:100}]};
  vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine",recorded:null,accounts:[account]});
  render(<UsageButton scope="machine" id="m1"/>);
- expect(await screen.findByRole("button",{name:"周额度剩余 38%"})).toBeTruthy();
+ expect(await screen.findByRole("button",{name:/周额度剩余 38%/})).toBeTruthy();
 });
 
 it("page polling never requests host quota; host refresh requires an explicit click",async()=>{
  vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine"});
  vi.mocked(api.hostOperation).mockResolvedValue({id:"refresh",type:"catalog.refresh",state:"accepted",createdAt:"",updatedAt:"",result:null,error:null});
  render(<UsageButton scope="machine" id="m1"/>);
- fireEvent.click(await screen.findByRole("button",{name:"周额度剩余 38%"}));expect(api.hostOperation).not.toHaveBeenCalled();
+ fireEvent.click(await screen.findByRole("button",{name:/周额度剩余 38%/}));expect(api.hostOperation).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole("button",{name:"刷新主机信息与额度"}));
  expect(await screen.findByText("已请求主机刷新，结果以更新时间为准。")).toBeTruthy();expect(api.hostOperation).toHaveBeenCalledWith("m1","catalog.refresh",expect.any(String));
 });

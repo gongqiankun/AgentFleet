@@ -28,8 +28,10 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const date=(s:string)=>new Date(s).toLocaleString(locale());
   const weekly=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===10080 && w.bucket==="codex").map(w=>({w,a})))??[];
   const label=scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):scope==="machine"&&!!data?.accounts.some(a=>a.windows.length)?t("用量与剩余额度"):data?.recorded?t("已记录 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
+  const showWeeklyReset=scope==="machine"&&weekly.length===1&&!failed;
+  const resetAt=showWeeklyReset?weekly[0].w.resetsAt:null;
   return <>
-    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/>{failed?t("用量暂不可用"):label}</button>
+    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/><span className="usage-trigger-text"><span>{failed?t("用量暂不可用"):label}</span>{showWeeklyReset&&<small>{resetAt?t("下次重置：{0}",date(new Date(resetAt*1000).toISOString())):t("重置时间未上报")}</small>}</span></button>
     <dialog ref={dialog} className="modal usage-dialog" aria-label={t("用量与剩余额度")} onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>
       <header className="modal-head"><div><h2>{t("用量与剩余额度")}</h2><p>{t("账号看额度，项目和会话看已记录 token")}</p></div><button type="button" className="icon-button" aria-label={t("关闭用量")} onClick={()=>setOpen(false)}><X size={18}/></button></header>
       <div className="usage-body">

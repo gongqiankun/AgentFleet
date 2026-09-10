@@ -1266,6 +1266,7 @@
   "托管目标检查失败 HTTP {0}": "Managed release check failed: HTTP {0}",
   "{0} 个项目 · {1} 个会话": "Projects: {0} · Sessions: {1}",
   "有 {0} 个会话的项目目录已不存在或无法读取，暂未加入可用项目。原始会话不会被删除。": "Project directories for {0} sessions are missing or unreadable and are not listed as available projects. The original sessions are preserved.",
+  "下次重置：{0}": "Next reset: {0}",
   "周额度剩余 {0}%": "Weekly quota: {0}% remaining",
   "已记录 {0} tokens": "Recorded: {0} tokens",
   "用量未上报": "Usage not reported",
