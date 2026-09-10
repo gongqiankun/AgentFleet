@@ -47,7 +47,7 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
   }, [sessionId, data, choice, changed, message, onSummary]);
   const summary = data ? `${changed ? t("未保存的选择") : labels[data.source]} · ${choice?.model ?? t("继承 Codex")} · ${choice?.effort ?? t("继承强度")} · ${choice?.mode === "plan" ? t("计划") : choice?.mode === "default" ? t("执行") : t("继承模式")}` : t("读取中");
   const content = <>
-    {!machineId && <p>{t("Codex 程序版本不是模型名称。以下设置仅用于新一轮，不改变历史消息。")}</p>}
+    {!machineId && <p>{t("新建会话不算一轮。首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。")}</p>}
     {machineId ? <p>{t("新会话和未单独覆盖的会话继承这里；会话覆盖优先，其次是已有项目配置。不修改宿主机 config.toml 或正在运行的任务。")}</p> : <p>{t("下次发送：")}{locale() === "en" ? " " : ""}{choice ? `${choice.model} · ${choice.effort ?? t("继承强度")} · ${choice.mode === "plan" ? t("计划") : choice.mode === "default" ? t("执行") : t("继承模式")}` : t("不附加覆盖，沿用 Codex 当前配置")}{locale() === "en" ? " " : ""}{t("。更改主机统一默认值请到主机页。")}</p>}
     {observed?.observed && <p>{t("最近读取：")}{locale() === "en" ? " " : ""}{observed.observed.model} · {observed.observed.effort ?? t("强度未上报")} · {new Date(observed.observed.observedAt).toLocaleString(locale())}</p>}
     {observed?.accepted && <p>{t("主机上次接受：")}{locale() === "en" ? " " : ""}{observed.accepted.model} · {observed.accepted.effort ?? t("继承强度")} · {observed.accepted.mode === "plan" ? t("计划模式") : observed.accepted.mode === "default" ? t("执行模式") : t("继承模式")}{locale() === "en" ? " " : ""}{t("（不代表提供方绝无模型回退）")}</p>}

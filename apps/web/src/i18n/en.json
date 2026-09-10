@@ -1319,5 +1319,8 @@
   "模型信息来自最近一次主机记录": "Model information is from the latest host record",
   "快速配置模型与推理强度": "Quick model and reasoning settings",
   "下轮": "Next turn",
-  "模型配置暂不可用": "Model settings unavailable"
+  "模型配置暂不可用": "Model settings unavailable",
+  "下次新任务": "Next task",
+  "首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。": "Your first message uses the selected settings. A running task, including follow-up instructions added to it, keeps its model.",
+  "新建会话不算一轮。首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。": "Creating a session does not start a turn. Your first message uses the selected settings. A running task, including follow-up instructions added to it, keeps its model."
 }

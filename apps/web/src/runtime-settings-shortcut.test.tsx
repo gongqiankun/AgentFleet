@@ -21,7 +21,7 @@ it("shows inherited settings and immediately reflects unsaved reasoning changes 
 it("opens quick configuration without changing settings and rejects a previous session summary",()=>{
  const open=vi.fn();const summary:RuntimeSummary={sessionId:"a",source:"session",settings:{model:"old-model",effort:"high"},changed:false,loaded:true};
  render(<RuntimeSettingsShortcut sessionId="b" summary={summary} running onOpen={open}/>);
- expect(screen.queryByText(/old-model/)).toBeNull();expect(screen.getByText("下轮")).toBeTruthy();fireEvent.click(screen.getByRole("button",{name:"快速配置模型与推理强度"}));expect(open).toHaveBeenCalledOnce();
+ expect(screen.queryByText(/old-model/)).toBeNull();expect(screen.getByText("下次新任务")).toBeTruthy();fireEvent.click(screen.getByRole("button",{name:"快速配置模型与推理强度"}));expect(open).toHaveBeenCalledOnce();
 });
 it("uses recent native model information for native inheritance and does not invent unknown effort",async()=>{
  render(<RuntimeSettingsShortcut sessionId="s" summary={{sessionId:"s",source:"codex",changed:false,loaded:true}} observed={{observed:{model:"native-model",observedAt:"2026-09-10T00:00:00Z"}}} running={false} onOpen={()=>{}}/>);
