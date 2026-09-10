@@ -1378,5 +1378,10 @@
   "回车换行": "Return for a new line",
   "应用于下一条新任务，正在执行的任务保持原配置。": "Applies to your next new task. Running tasks keep their current settings.",
   "新会话默认使用此配置，项目和会话可单独设置。": "New conversations use these defaults. Projects and conversations can override them.",
-  "配置说明与来源": "Settings details and sources"
+  "配置说明与来源": "Settings details and sources",
+  "代码": "Code",
+  "复制代码": "Copy code",
+  "复制失败，请手动选择代码复制。": "Copy failed. Select the code and copy it manually.",
+  "表格": "Table",
+  "查看图片": "View image"
 }

@@ -53,3 +53,10 @@ simulated and unit-tested; this does not replace testing on physical iOS devices
 Release this as a web-only image using `packaging/Dockerfile.web`. Preserve a known
 base image and verify backend and published download checksums before switching
 the control-plane container. See [web-only release](web-only-release.md).
+
+Assistant messages render CommonMark and GFM with react-markdown and remark-gfm.
+Headings, nested lists, quotes, task lists and tables share the interface type
+scale. Wide tables and fenced code scroll within the message; code has an exact
+copy action. Raw HTML is ignored and the default URL sanitizer stays enabled.
+Markdown images are links; uploaded attachments retain their existing viewer.
+User messages, execution logs and the raw view preserve literal text.

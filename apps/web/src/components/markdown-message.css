@@ -1,0 +1,47 @@
+.message-markdown { min-width: 0; max-width: 100%; margin-top: 12px; font-size: var(--text-body); line-height: 1.75; color: var(--ink); overflow-wrap: anywhere; }
+.message-markdown > :first-child { margin-top: 0; }
+.message-markdown > :last-child { margin-bottom: 0; }
+.timeline-event .message-markdown p { margin: 0 0 14px; font-size: inherit; line-height: inherit; white-space: normal; }
+.message-markdown :is(h1,h2,h3,h4,h5,h6) { margin: 24px 0 10px; font-weight: 650; line-height: 1.45; letter-spacing: -.015em; }
+.message-markdown h1 { font-size: 1.375rem; }
+.message-markdown h2 { font-size: 1.25rem; }
+.message-markdown h3 { font-size: 1.125rem; }
+.message-markdown :is(h4,h5,h6) { font-size: 1rem; }
+.message-markdown strong { font-weight: 650; }
+.message-markdown :is(ul,ol) { padding-left: 1.55em; margin: 10px 0 18px; }
+.message-markdown li { padding-left: .2em; margin: 6px 0; }
+.message-markdown li::marker { color: var(--muted); }
+.message-markdown li > :is(ul,ol) { margin: 6px 0; }
+.timeline-event .message-markdown li > p { margin-bottom: 6px; }
+.message-markdown .contains-task-list { list-style: none; padding-left: .15em; }
+.message-markdown .task-list-item input { width: 15px; height: 15px; min-height: 0; margin: 0 8px 0 0; vertical-align: middle; }
+.message-markdown blockquote { margin: 16px 0; padding: 10px 16px; border-left: 3px solid var(--line-strong); background: var(--canvas); border-radius: 0 10px 10px 0; color: var(--muted); }
+.timeline-event .message-markdown blockquote > p { color: inherit; }
+.timeline-event .message-markdown blockquote > :last-child { margin-bottom: 0; }
+.message-markdown a { color: var(--cobalt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.message-markdown a:hover { color: var(--cobalt-deep); }
+.message-markdown code { font-family: var(--mono); font-size: .875em; padding: .15em .35em; border: 1px solid var(--line); border-radius: 5px; background: var(--canvas); overflow-wrap: anywhere; }
+.markdown-code { margin: 16px 0; min-width: 0; border: 1px solid var(--component-line); border-radius: 12px; overflow: hidden; background: var(--terminal); }
+.markdown-code__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 12px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--text-caption); }
+.markdown-code__header > span { overflow-wrap: anywhere; }
+.markdown-code__header button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 36px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.markdown-code__header button:hover { color: var(--ink); background: var(--paper-solid); }
+.message-markdown .markdown-code pre { margin: 0; padding: 14px 16px; max-width: 100%; overflow-x: auto; white-space: pre; overflow-wrap: normal; tab-size: 2; line-height: 1.65; font-size: var(--text-small); }
+.message-markdown pre code { padding: 0; border: 0; background: transparent; border-radius: 0; font-size: inherit; white-space: pre; overflow-wrap: normal; }
+.markdown-code__notice { display: block; padding: 4px 12px; font-size: var(--text-caption); color: var(--muted); }
+.markdown-table { max-width: 100%; overflow-x: auto; margin: 16px 0; border: 1px solid var(--component-line); border-radius: 12px; }
+.message-markdown table { width: 100%; border-collapse: collapse; font-size: var(--text-small); line-height: 1.6; }
+.message-markdown :is(th,td) { padding: 10px 14px; min-width: 110px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+.message-markdown th { font-weight: 600; background: var(--paper-solid); }
+.message-markdown tbody tr:last-child td { border-bottom: 0; }
+.message-markdown tbody tr:nth-child(even) { background: var(--canvas); }
+.message-markdown hr { height: 0; margin: 24px 0; border: 0; border-top: 1px solid var(--line); }
+.message-markdown .footnotes { font-size: var(--text-caption); color: var(--muted); }
+@media (max-width: 900px) { .markdown-code__header button { min-height: 44px; } }
+@media (max-width: 660px) {
+  .message-markdown h1 { font-size: 1.25rem; }
+  .message-markdown h2 { font-size: 1.125rem; }
+  .message-markdown h3 { font-size: 1rem; }
+  .message-markdown :is(th,td) { padding: 8px 10px; }
+  .message-markdown .markdown-code pre { padding: 12px; font-size: var(--text-caption); }
+}

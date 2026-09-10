@@ -1,3 +1,4 @@
+import { MarkdownMessage } from "./components/MarkdownMessage";
 import { SessionActions } from "./components/SessionActions";
 import { useMobileViewport } from "./lib/mobile-viewport";
 import { RuntimeSettingsShortcut } from "./components/RuntimeSettingsShortcut";
@@ -564,7 +565,7 @@ function Timeline({ events }: { events: TimelineEvent[] }) {
             <strong>{systemText(event.title) || (event.actor === "user" ? t("你") : event.actor === "agent" ? "Codex" : event.type)}</strong>
             <time>{new Date(event.occurredAt).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}</time>
           </div>
-          {event.payloadState === "deleted" ? <p className="deleted-copy">{t("正文已按保留策略删除")}</p> : event.body ? <p>{event.body}</p> : null}
+          {event.payloadState === "deleted" ? <p className="deleted-copy">{t("正文已按保留策略删除")}</p> : event.body ? event.actor === "agent" ? <MarkdownMessage body={event.body} /> : <p>{event.body}</p> : null}
           {event.payloadState !== "deleted" && Boolean(event.images?.length) && <MessageImages images={event.images!} />}
           {event.payloadState !== "deleted" && <CommandExecution command={event.command} output={event.output} />}
           {event.diff && <div className="diff-summary"><FileDiff size={14} />{count(event.diff.files, "个文件")} <b>+{event.diff.additions}</b> <i>−{event.diff.deletions}</i></div>}
