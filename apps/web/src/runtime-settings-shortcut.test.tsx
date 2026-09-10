@@ -11,7 +11,7 @@ afterEach(()=>{cleanup();vi.resetAllMocks();});
 const fixture:CodexPreferences={catalog:{models:[{model:"example-model",displayName:"Example model",efforts:["low","high"],defaultEffort:"low"}],modes:[],fetchedAt:"2026-09-10T00:00:00Z"},preferences:{machine:{settings:{model:"example-model",effort:"low"},revision:1},project:{settings:null,revision:0},session:{settings:null,revision:0}},source:"machine",desired:{model:"example-model",effort:"low"}};
 it("shows inherited settings and immediately reflects unsaved reasoning changes and saved overrides",async()=>{
  vi.mocked(api.codexPreferences).mockResolvedValue(fixture);
- vi.mocked(api.saveCodexPreferences).mockResolvedValue({...fixture,source:"session",desired:{model:"example-model",effort:"high"}});
+ vi.mocked(api.saveCodexPreferences).mockResolvedValue({...fixture,source:"session",desired:{model:"example-model",effort:"high"},preferences:{...fixture.preferences,session:{settings:{model:"example-model",effort:"high"},revision:1}}});
  function Harness(){const [summary,setSummary]=useState<RuntimeSummary>();return <><CodexSettingsPanel sessionId="s" onSummary={setSummary}/><RuntimeSettingsShortcut sessionId="s" summary={summary} running={false} onOpen={()=>{}}/></>;}
  render(<Harness/>);await screen.findByText("继承 · example-model · low");
  fireEvent.click(screen.getByText("运行配置"));fireEvent.change(screen.getByRole("combobox",{name:"推理强度"}),{target:{value:"high"}});

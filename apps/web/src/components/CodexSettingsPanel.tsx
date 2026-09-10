@@ -6,6 +6,11 @@ import type { CodexPreferences, CodexSettings, RuntimeSettings } from "../lib/co
 export type RuntimeSummary = { sessionId: string; source?: CodexPreferences["source"]; settings?: CodexSettings; changed: boolean; loaded: boolean; failed?: boolean };
 export type RuntimeChoice = { sessionId: string; settings?: CodexSettings };
 const ignoreChoice = (_choice: RuntimeChoice) => {};
+const settingsEqual = (left?: CodexSettings | null, right?: CodexSettings | null) => {
+  if (!left || !right) return !left && !right;
+  return left.model === right.model && left.effort === right.effort && left.mode === right.mode
+    && left.serviceTier === right.serviceTier && left.personality === right.personality;
+};
 export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChange = ignoreChoice, onSummary }: { sessionId?: string; machineId?: string; observed?: RuntimeSettings | null; onChange?: (choice: RuntimeChoice) => void; onSummary?: (summary: RuntimeSummary) => void }) {
   const [data, setData] = useState<CodexPreferences>();
   const [choice, setChoice] = useState<CodexSettings>();
@@ -16,11 +21,13 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
   const generation = useRef(0);
   useEffect(() => {
     const controller = new AbortController(); const current = ++generation.current;
-    setData(undefined); setChoice(undefined); setMessage(""); setBusy(false); setScope(machineId ? "machine" : "session");
+    const initialScope = machineId ? "machine" : "session";
+    setData(undefined); setChoice(undefined); setMessage(""); setBusy(false); setScope(initialScope);
     onChange({ sessionId });
     void Promise.resolve().then(() => machineId ? api.machineCodexPreferences(machineId, controller.signal) : api.codexPreferences(sessionId, controller.signal)).then((next) => {
       if (controller.signal.aborted || current !== generation.current) return;
-      setData(next); setChoice(next.desired ?? undefined); onChange({ sessionId, settings: next.desired ?? undefined });
+      const nextChoice = next.desired ?? undefined;
+      setData(next); setChoice(nextChoice); onChange({ sessionId, settings: nextChoice });
     }).catch((error) => { if (!controller.signal.aborted) setMessage(error instanceof Error ? error.message : t("读取配置失败")); });
     return () => { controller.abort(); generation.current += 1; };
   }, [sessionId, machineId, onChange, retry]);
@@ -36,12 +43,14 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
       const input = { settings: inherit ? null : choice!, revision: data.preferences[scope].revision };
       const next = machineId ? await api.saveMachineCodexPreferences(machineId, input) : await api.saveCodexPreferences(sessionId, { scope, ...input });
       if (current !== generation.current) return;
-      setData(next); select(next.desired ?? undefined); setMessage(t("面板配置已保存；下次发送时应用，不修改正在运行的任务。"));
+      const nextChoice = next.desired ?? undefined;
+      setData(next); select(nextChoice); setMessage(t("面板配置已保存；下次发送时应用，不修改正在运行的任务。"));
     } catch (error) { if (current === generation.current) setMessage(error instanceof Error ? error.message : t("保存失败")); }
     finally { if (current === generation.current) setBusy(false); }
   }
   const labels = { machine: t("主机默认"), project: t("项目默认"), session: t("会话覆盖"), codex: t("Codex 自身配置") };
-  const changed = data && JSON.stringify(choice ?? null) !== JSON.stringify(data.desired);
+  const changed = Boolean(data && !settingsEqual(choice, data.desired));
+  const saveChanged = Boolean(data && !settingsEqual(choice, data.preferences[scope].settings));
   useEffect(() => {
     onSummary?.({ sessionId, source: data?.source, settings: choice, changed: Boolean(changed), loaded: Boolean(data), failed: !data && Boolean(message) });
   }, [sessionId, data, choice, changed, message, onSummary]);
@@ -57,22 +66,22 @@ export function CodexSettingsPanel({ sessionId = "", machineId, observed, onChan
       {changed && <p role="status">{machineId ? t("修改尚未保存，不影响会话默认值。") : t("当前选择尚未保存：仅用于下次发送，刷新后恢复已保存配置。")}</p>}
       {!machineId && <p>{t("模型目录读取于")}{locale() === "en" ? " " : ""}{new Date(data.catalog.fetchedAt).toLocaleString(locale())}{locale() === "en" ? " " : ""}{t("。账号或模型权限变化后，请在主机页重连运行时。取消已保存的默认配置需清除对应范围的覆盖。")}</p>}
       <div className="codex-settings-fields">
-      <label>{t("模型")}<select aria-label={machineId ? t("主机默认模型") : t("会话模型")} value={choice?.model ?? ""} onChange={(event) => {
+      <label>{t("模型")}<select aria-label={machineId ? t("主机默认模型") : t("会话模型")} disabled={busy} value={choice?.model ?? ""} onChange={(event) => {
         const next = data.catalog!.models.find((item) => item.model === event.target.value);
         select(next ? { model: next.model, ...(next.defaultEffort ? { effort: next.defaultEffort } : {}) } : undefined);
       }}><option value="">{t("不覆盖，继承 Codex 当前配置")}</option>{choice && !model && <option value={choice.model}>{choice.model}{locale() === "en" ? " " : ""}{t("（主机当前未提供）")}</option>}{data.catalog.models.map((item) => <option key={item.model} value={item.model}>{item.displayName}</option>)}</select></label>
-      <label>{t("推理强度")}<select aria-label={t("推理强度")} disabled={!model} value={choice?.effort ?? ""} onChange={(event) => select({ ...choice!, effort: event.target.value || undefined })}><option value="">{t("继承")}</option>{model?.efforts.map((effort) => <option key={effort} value={effort}>{effort}</option>)}</select></label>
-      <label>{t("协作模式")}<select aria-label={t("协作模式")} disabled={!model || !data.catalog.modes.length} value={choice?.mode ?? ""} onChange={(event) => select({ ...choice!, mode: event.target.value as CodexSettings["mode"] || undefined })}><option value="">{t("继承")}</option>{data.catalog.modes.filter((mode) => mode === "default" || mode === "plan").map((mode) => <option key={mode} value={mode}>{mode === "plan" ? t("计划") : t("执行")}</option>)}</select></label>
-      <label>{t("服务档位")}<select aria-label={t("服务档位")} disabled={!model} value={choice?.serviceTier === null ? "__default" : choice?.serviceTier ?? ""} onChange={(event) => select({ ...choice!, serviceTier: event.target.value === "__default" ? null : event.target.value || undefined })}><option value="">{t("继承当前档位")}</option><option value="__default">{t("恢复默认档位")}</option>{model?.serviceTiers?.map((tier) => <option key={tier.id} value={tier.id}>{tier.name}</option>)}</select></label>
-      <label>{t("沟通风格")}<select aria-label={t("沟通风格")} disabled={!model?.supportsPersonality} value={choice?.personality ?? ""} onChange={(event) => select({ ...choice!, personality: event.target.value as CodexSettings["personality"] || undefined })}><option value="">{t("继承")}</option><option value="none">{t("不指定风格")}</option><option value="friendly">{t("友好")}</option><option value="pragmatic">{t("务实")}</option></select></label>
+      <label>{t("推理强度")}<select aria-label={t("推理强度")} disabled={busy || !model} value={choice?.effort ?? ""} onChange={(event) => select({ ...choice!, effort: event.target.value || undefined })}><option value="">{t("继承")}</option>{model?.efforts.map((effort) => <option key={effort} value={effort}>{effort}</option>)}</select></label>
+      <label>{t("协作模式")}<select aria-label={t("协作模式")} disabled={busy || !model || !data.catalog.modes.length} value={choice?.mode ?? ""} onChange={(event) => select({ ...choice!, mode: event.target.value as CodexSettings["mode"] || undefined })}><option value="">{t("继承")}</option>{data.catalog.modes.filter((mode) => mode === "default" || mode === "plan").map((mode) => <option key={mode} value={mode}>{mode === "plan" ? t("计划") : t("执行")}</option>)}</select></label>
+      <label>{t("服务档位")}<select aria-label={t("服务档位")} disabled={busy || !model} value={choice?.serviceTier === null ? "__default" : choice?.serviceTier ?? ""} onChange={(event) => select({ ...choice!, serviceTier: event.target.value === "__default" ? null : event.target.value || undefined })}><option value="">{t("继承当前档位")}</option><option value="__default">{t("恢复默认档位")}</option>{model?.serviceTiers?.map((tier) => <option key={tier.id} value={tier.id}>{tier.name}</option>)}</select></label>
+      <label>{t("沟通风格")}<select aria-label={t("沟通风格")} disabled={busy || !model?.supportsPersonality} value={choice?.personality ?? ""} onChange={(event) => select({ ...choice!, personality: event.target.value as CodexSettings["personality"] || undefined })}><option value="">{t("继承")}</option><option value="none">{t("不指定风格")}</option><option value="friendly">{t("友好")}</option><option value="pragmatic">{t("务实")}</option></select></label>
       </div>
       {!data.catalog.modes.length && <p>{t("当前运行时未提供模式切换能力。")}</p>}
       <p>{t("服务档位仅列出主机支持项，可能影响额度或费用；未提供快速档位时不能强制开启。")}</p>
       {model && !model.supportsPersonality && <p>{t("当前模型未声明支持沟通风格配置。")}</p>}
       {data.catalog.modeNotice && <p>{data.catalog.modeNotice} {locale() === "en" ? " " : ""}{t("请更新这台主机的 AgentFleets 连接服务后重新读取；仅刷新网页不会升级主机。")}</p>}
       {choice && !valid && <p role="alert">{t("所选配置在当前主机不可用，请重新选择。主机会拒绝不支持的配置。")}</p>}
-      {!machineId && <label>{t("保存范围")}<select aria-label={t("配置保存范围")} value={scope} onChange={(event) => setScope(event.target.value as typeof scope)}><option value="session">{t("仅此会话")}</option><option value="project">{t("此项目中未单独覆盖的会话")}</option></select></label>}
-      <div className="codex-settings-save"><button type="button" className={`button ${machineId ? "button--primary" : "button--quiet"}`} disabled={busy || !valid} onClick={() => void save()}>{machineId ? t("保存主机默认配置") : scope === "session" ? t("保存为此会话配置") : t("保存为项目默认配置")}</button><button type="button" className="button button--quiet" disabled={busy} onClick={() => void save(true)}>{machineId ? t("清除主机默认配置") : t("恢复继承（清除此范围覆盖）")}</button></div>
+      {!machineId && <label>{t("保存范围")}<select aria-label={t("配置保存范围")} disabled={busy} value={scope} onChange={(event) => setScope(event.target.value as typeof scope)}><option value="session">{t("仅此会话")}</option><option value="project">{t("此项目中未单独覆盖的会话")}</option></select></label>}
+      <div className="codex-settings-save"><button type="button" className={`button ${machineId ? "button--primary" : "button--quiet"}`} disabled={busy || !valid || !saveChanged} onClick={() => void save()}>{machineId ? t("保存主机默认配置") : scope === "session" ? t("保存为此会话配置") : t("保存为项目默认配置")}</button><button type="button" className="button button--quiet" disabled={busy || !data.preferences[scope].settings} onClick={() => void save(true)}>{machineId ? t("清除主机默认配置") : t("恢复继承（清除此范围覆盖）")}</button></div>
       {!machineId && data.preferences.project.settings && <p>{t("此项目已有独立配置；清除会话覆盖后先继承项目。若要继承主机，请同时清除项目范围覆盖。")}</p>}
     </>}
     {message && <p role="status">{systemText(message)}</p>}
