@@ -1,3 +1,4 @@
+import { quotaSnapshot, tokenUsage } from "./usage.js";
 import { previewNativeDeletion, type DeletionPreview } from "./native-deletion.js";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -155,6 +156,8 @@ export interface ThreadResumeResult extends ThreadStartResult {
 
 /** The small, allow-listed App Server surface used by the runtime. */
 export interface AppServerClient {
+  refreshQuota?(): Promise<void>;
+  getQuotaSnapshot?(): Record<string, unknown> | undefined;
   previewDeletion?(thread:ManagedThread,project:ProjectRecord):Promise<DeletionPreview>;
   deleteThread?(thread:ManagedThread,project:ProjectRecord,preview:DeletionPreview):Promise<void>;
   getCodexCatalog?(): CodexCatalog;
@@ -384,6 +387,23 @@ export class CodexAppServer implements AppServerClient {
   constructor(callbacks: AppServerCallbacks, epoch: string = randomUUID(), private readonly environment: NodeJS.ProcessEnv = process.env) {
     this.callbacks = callbacks;
     this.appServerEpoch = epoch;
+  }
+
+  private quota: Record<string, unknown> | undefined;
+  private quotaPending = false;
+  private quotaAttempt = 0;
+  private quotaGeneration = 0;
+  getQuotaSnapshot(): Record<string, unknown> | undefined { return this.quota; }
+  async refreshQuota(): Promise<void> {
+    if (!this.initialized || this.quotaPending || Date.now() - this.quotaAttempt < 60_000) return;
+    this.quotaPending = true; this.quotaAttempt = Date.now();
+    const generation = this.quotaGeneration;
+    try {
+      const identity = await this.request("account/read", { refreshToken: false });
+      const value = await this.request("account/rateLimits/read", null);
+      if (generation === this.quotaGeneration) this.quota = quotaSnapshot(value, identity);
+    } catch { /* Optional telemetry must never interrupt execution. Keep the old timestamp visible. */ }
+    finally { this.quotaPending = false; }
   }
 
   async start(): Promise<void> {
@@ -1228,7 +1248,14 @@ export class CodexAppServer implements AppServerClient {
       return;
     }
 
+    if (method === "account/updated") { this.quota = undefined; this.quotaGeneration++; this.quotaAttempt = 0; return; }
+    if (method === "account/rateLimits/updated") { void this.refreshQuota(); return; }
     let event: AppEvent | null = null;
+    if (method === "thread/tokenUsage/updated" && typeof params.threadId === "string" && typeof params.turnId === "string") {
+      const usage = tokenUsage(params.tokenUsage);
+      if (usage) await this.callbacks.onEvent({ type: "thread.usage", nativeThreadId: params.threadId, nativeTurnId: params.turnId, payload: { usage } }, this.appServerEpoch);
+      return;
+    }
     if (method === "thread/status/changed" && typeof params.threadId === "string" && isRecord(params.status)) {
       event = {
         type: "thread.status_changed",

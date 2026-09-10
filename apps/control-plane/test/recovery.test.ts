@@ -324,7 +324,7 @@ test("v7 enrollment schema upgrades with explicit credential recovery fields", (
      DROP TABLE turn_queue;
      ALTER TABLE logical_sessions DROP COLUMN queue_version;
      ALTER TABLE execution_segments DROP COLUMN history_mode;
-     PRAGMA user_version = 7`,
+     DROP TABLE usage_days; DROP TABLE session_usage; DROP TABLE machine_usage; PRAGMA user_version = 7`,
   );
   seed.close();
 
@@ -335,7 +335,7 @@ test("v7 enrollment schema upgrades with explicit credential recovery fields", (
   });
   assert.equal(
     Number((upgraded.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version),
-    25,
+    26,
   );
   const columns = upgraded.all<{ name: string }>("PRAGMA table_info(enrollment_transactions)").map((column) => column.name);
   assert.ok(columns.includes("credential_id"));
@@ -478,7 +478,7 @@ test("v4 through v8 migration freezes a Project with multiple legacy active Sess
      DROP TABLE turn_queue;
      ALTER TABLE logical_sessions DROP COLUMN queue_version;
      ALTER TABLE execution_segments DROP COLUMN history_mode;
-     PRAGMA user_version = 4`,
+     DROP TABLE usage_days; DROP TABLE session_usage; DROP TABLE machine_usage; PRAGMA user_version = 4`,
   );
   seed.close();
 
@@ -489,7 +489,7 @@ test("v4 through v8 migration freezes a Project with multiple legacy active Sess
   });
   assert.equal(
     Number((upgraded.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version),
-    25,
+    26,
   );
   const reservation = upgraded.get<{
     state: string;

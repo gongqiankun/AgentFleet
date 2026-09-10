@@ -5,6 +5,7 @@ export function timelineItems(events: TimelineEvent[]): TimelineEvent[] {
   const result: TimelineEvent[] = [];
   const positions = new Map<string, number>();
   for (const event of events) {
+    if (event.type === "thread.usage") continue;
     const scope = event.nativeThreadId || event.executionSegmentId;
     if (!["item.started", "item.completed"].includes(event.type) || !scope || !event.nativeTurnId || !event.nativeItemId) {
       result.push(event);

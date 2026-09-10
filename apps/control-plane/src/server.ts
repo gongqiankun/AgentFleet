@@ -1,3 +1,4 @@
+import { UsageService } from "./usage.js";
 import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
@@ -146,6 +147,7 @@ export async function buildControlPlane(
   const registry = new RegistryService(db, config);
   const startupMachineReconciliation = registry.reconcileControlPlaneRestart();
   const coordination = new CoordinationService(db, config);
+  const usage = new UsageService(db);
   const codexPreferences = new CodexPreferencesService(db);
   const machineMaintenance = new MaintenanceService(db);
   const credentials = new CredentialRenewalService(db);
@@ -737,6 +739,9 @@ export async function buildControlPlane(
       typeof body.clientMutationId === "string" ? body.clientMutationId : undefined,
     );
   });
+  for (const [path,scope] of [["sessions","session"],["projects","project"],["machines","machine"]] as const) {
+    app.get(`/api/${path}/:id/usage`, { preHandler: authenticate }, async request => usage.read((request.principal as Principal).workspaceId,scope,routeId(request)));
+  }
   app.get("/api/sessions/:id", { preHandler: authenticate }, async (request) => {
     const principal = request.principal as Principal;
     const logicalSessionId = routeId(request);
@@ -1047,6 +1052,7 @@ export async function buildControlPlane(
             invariant(state.producerEpoch, 409, "AGENT_HELLO_REQUIRED", "Agent must send hello first");
             invariant(state.reconciliationReady, 409, "RECONCILIATION_REQUIRED", "Heartbeat is disabled until reconciliation completes");
             registry.heartbeat(identity, message.capacity, message.activeTurns, message.unreachableReason, message.codexProfile, { readOnly: message.readOnly, readOnlyReasons: message.readOnlyReasons });
+            usage.quota(identity.machineId,message.quota);
             if(message.discovery) registry.updateDiscovery(identity.machineId,message.discovery);
             sendJson(socket, { type: "heartbeat.ack", serverTime: nowIso() });
             dispatchPendingCommands(identity.machineId, identity.workspaceId);

@@ -1,3 +1,4 @@
+import { UsageService } from "./usage.js";
 import type { ControlPlaneConfig } from "./config.js";
 import { sameLeaseAccount } from "./lease-ownership.js";
 import { parseImages } from "./images.js";
@@ -97,6 +98,7 @@ interface ProjectTurnReservationRow {
 }
 
 const KNOWN_EVENT_TYPES = new Set([
+  "thread.usage",
   "session.created",
   "thread.started",
   "thread.claimed",
@@ -2405,6 +2407,9 @@ export class CoordinationService {
         );
       } else if (recognized && !(tombstoneAtIngress && event.type === "approval.requested")) {
         this.applyProjection(connection, event, currentAppServerEpoch, timestamp);
+      }
+      if (recognized && event.type === "thread.usage" && !staleContentEpoch && !staleAppServerEpoch && !tombstoneAtIngress && session.sync_content === 1 && requestedPayloadState === "present") {
+        new UsageService(this.db).record(event);
       }
       const record = this.getEventRecord(event.eventId);
       return {

@@ -1,3 +1,4 @@
+import { UsageButton } from "./components/UsageButton";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { count, t, locale, systemText, useLocale } from "./i18n";
 import { SessionConfiguration, type ConfigurationRequest } from "./components/SessionConfiguration";
@@ -389,6 +390,7 @@ export function MachineSummaryHeader({ machine, onAliasChange }: {
         {machine.displayAlias && <span className="machine-hostname">hostname · {machine.hostname}</span>}
       </div>
       <div className="machine-summary__actions">
+        <UsageButton scope="machine" id={machine.id}/>
         <div className="machine-summary__facts"><span><GitBranch size={14} />{count(machine.discovery?.discoveredProjects ?? machine.projects.length, "个项目")} </span><span>{machine.reachability === "live" ? t("在线") : t("等待连接")}</span></div>
       </div>
     </section>
@@ -710,6 +712,7 @@ export function SessionInspector({ detail, loading, draftOwner, onLoadHistory, h
             <span className={`history-mark history-mark--${session.state.history}`}>{{ complete: t("完整历史"), partial: t("部分历史"), summary_only: t("历史摘要"), metadata_only: t("仅会话信息"), unavailable: t("历史暂不可用") }[session.state.history]}</span>
           </div>
         <div className="inspector-head__actions">
+          <UsageButton scope="session" id={session.id}/>
           <button type="button" className="button button--quiet session-config-trigger" aria-haspopup="dialog" onClick={() => setConfiguration({ section: "all", nonce: Date.now() })}><Settings2 size={16} />{t("会话配置")}</button>
           <NativeSessionDeletion key={`delete:${draftOwner}:${session.id}`} session={session} commands={detail.commands ?? []} pending={pendingCommand} onChanged={onRefresh} />
           <IconButton label={t("刷新会话")} onClick={onRefresh}><RefreshCw size={16} /></IconButton>

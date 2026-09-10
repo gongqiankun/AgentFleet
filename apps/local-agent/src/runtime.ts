@@ -511,10 +511,12 @@ export class AgentRuntime {
   }
 
   heartbeatPayload(): Record<string, unknown> {
+    if (!this.shuttingDown) void this.appServer?.refreshQuota?.();
     if (!this.shuttingDown) void this.refreshHostCodex().catch(() => undefined);
     const state = this.store.snapshot();
     return {
       type: "heartbeat",
+      quota: this.appServer?.getQuotaSnapshot?.() ?? null,
       capacity: this.capacityState(),
       activeTurns: Object.values(state.managedThreads).filter((thread) => thread.activeTurnId !== undefined).length,
       readOnly: !this.isWritable(),

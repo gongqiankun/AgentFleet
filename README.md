@@ -76,6 +76,12 @@ For example, keep a host's everyday model and reasoning effort as its default, t
 
 Together with direct access to running and completed-but-controlled sessions, native-session continuity, message queues, and explicit recovery, these are the workflows AgentFleets focuses on making easier. They are practical product strengths, not claims that other Codex clients lack similar features.
 
+### Know what is using your quota
+
+Open usage from a host, project, or session to see the account's reported **used and remaining quota**, reset times, and recorded **token consumption**. Host details rank the busiest projects; project details rank sessions and let you jump straight to them. Weekly and five-hour limits appear when Codex reports those windows.
+
+Quota is shared by a Codex account; project and session figures are recorded tokens, not an allocation of the account's percentage. Agent 0.30.0 starts collecting native usage notifications from managed sessions. Earlier history and standalone CLI activity are not backfilled. Missing or stale data is labeled explicitly. See [usage accounting](docs/usage.md) for coverage and counting rules.
+
 ## How it compares to Codex
 
 **AgentFleets adds a self-hosted management interface around Codex.** The host's Codex runtime still executes the work; AgentFleets does not supply a model, a subscription, or extra usage quota.

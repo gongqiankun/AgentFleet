@@ -1,3 +1,4 @@
+import type { UsageSummary } from "./usage";
 import { t } from "../i18n";
 import type {
   Approval,
@@ -581,6 +582,7 @@ export interface RuntimeReleaseStatus {
 }
 
 export const api = {
+  usage: (scope: "session" | "project" | "machine", id: string, signal?: AbortSignal) => request<UsageSummary>(`/api/${scope === "session" ? "sessions" : scope === "project" ? "projects" : "machines"}/${encodeURIComponent(id)}/usage`, { signal }),
   imageSessions: (id: string, cursor = "", signal?: AbortSignal) => request<{sessions: import("./types").ImageSessionUsage[]; nextCursor: string | null}>(`/api/machines/${encodeURIComponent(id)}/images/sessions?cursor=${encodeURIComponent(cursor)}`, { signal }),
   async imageOperation(machineId: string, logicalSessionId: string, previewOperationId?: string): Promise<HostOperation> {
     const raw = await request<JsonObject>(`/api/machines/${encodeURIComponent(machineId)}/operations`, { method: "POST", body: JSON.stringify({type: previewOperationId ? "images.clean" : "images.preview", logicalSessionId, previewOperationId, clientMutationId: crypto.randomUUID()}) });

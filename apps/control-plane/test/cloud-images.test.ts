@@ -92,7 +92,7 @@ test("schema 19 inline command migration preserves payload bytes and is restart-
     VALUES('old','old','wire-hash',?,?,?,?,?,'turn.start','{}','{}',?,?)`, ws, user.user_id, user.client_session_id, s.logicalSessionId, s.executionSegmentId, now, "2099-01-01T00:00:00Z");
   const payload = { prompt: "old image", images: [png] };
   db.run("INSERT INTO command_contents(command_id,body_json,created_at,expires_at) VALUES('old',?,?,'2099-01-01T00:00:00Z')", JSON.stringify(payload), now);
-  db.sqlite.exec("PRAGMA user_version=19");
+  db.sqlite.exec("DROP TABLE usage_days; DROP TABLE session_usage; DROP TABLE machine_usage; PRAGMA user_version=19");
   const migrated = new ControlPlaneDatabase(path); t.after(() => migrated.close());
   const normalized = JSON.parse(migrated.get<{ body_json: string }>("SELECT body_json FROM command_contents WHERE command_id='old'")!.body_json);
   assert.equal(JSON.stringify(normalized).includes(png), false);

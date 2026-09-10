@@ -304,6 +304,7 @@ export type AgentToServerMessage =
     }
   | {
       type: "heartbeat";
+      quota?: unknown;
       readOnly?: boolean;
       readOnlyReasons?: string[];
       codexProfile?: Record<string, unknown>;

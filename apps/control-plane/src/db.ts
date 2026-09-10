@@ -798,7 +798,7 @@ export class ControlPlaneDatabase {
 
   private migrate(): void {
     const version = Number((this.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version);
-    if (version > 25) throw new Error(`Database schema ${version} is newer than this binary`);
+    if (version > 26) throw new Error(`Database schema ${version} is newer than this binary`);
     let currentVersion = version;
     if (version < 1) {
       this.transaction(() => {
@@ -1078,6 +1078,22 @@ export class ControlPlaneDatabase {
         if(this.all("PRAGMA foreign_key_check").length)throw new Error("Image cleanup migration violated foreign keys");
       });
     }
+    if (version < 26) this.transaction(() => {
+      this.sqlite.exec(`CREATE TABLE session_usage (
+        logical_session_id TEXT PRIMARY KEY REFERENCES logical_sessions(logical_session_id) ON DELETE CASCADE,
+        native_thread_id TEXT NOT NULL, epoch TEXT NOT NULL, counters_json TEXT NOT NULL, last_json TEXT NOT NULL,
+        recorded_json TEXT NOT NULL, first_at TEXT NOT NULL, observed_at TEXT NOT NULL, context_window INTEGER, discontinuities INTEGER NOT NULL DEFAULT 0
+      ) STRICT;
+      CREATE TABLE usage_days (
+        logical_session_id TEXT NOT NULL REFERENCES logical_sessions(logical_session_id) ON DELETE CASCADE, day TEXT NOT NULL,
+        input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL, cached_input_tokens INTEGER NOT NULL, reasoning_output_tokens INTEGER NOT NULL, total_tokens INTEGER NOT NULL,
+        PRIMARY KEY(logical_session_id,day)
+      ) STRICT;
+      CREATE TABLE machine_usage (
+        machine_id TEXT PRIMARY KEY REFERENCES machines(machine_id) ON DELETE CASCADE, account_key TEXT, observed_at TEXT NOT NULL, windows_json TEXT NOT NULL
+      ) STRICT;
+      PRAGMA user_version=26`);
+    });
   }
 
   transaction<T>(operation: () => T): T {

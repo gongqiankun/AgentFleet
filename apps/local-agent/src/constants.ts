@@ -1,4 +1,4 @@
-export const AGENT_VERSION = "0.29.0";
+export const AGENT_VERSION = "0.30.0";
 export const FLEET_PROTOCOL_VERSION = "1.0";
 export const STATE_SCHEMA_VERSION = 2;
 export const POLICY_VERSION = "remote-restricted-v1";
