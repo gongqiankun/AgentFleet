@@ -195,13 +195,18 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .catalog-search label:focus-within { outline: 2px solid var(--cobalt); outline-offset: 2px; }
 .catalog-search input { font-size: var(--text-small); min-height: 42px; padding: 8px 0; box-shadow: none; outline: none; }
 .catalog-search select { font-size: var(--text-caption); min-height: 40px; border-color: var(--component-line); background: var(--canvas); border-radius: 10px; }
-.catalog-project-heading { background: transparent; padding: 0 8px 0 0; }
-.catalog-project-heading .project-session-group__heading { min-height: 68px; padding: 12px; gap: 9px; }
+.catalog-project-heading { display: grid; grid-template-columns: minmax(0, 1fr) 40px; background: transparent; padding: 0 8px 0 0; }
+.catalog-project-heading .project-session-group__heading { min-height: 56px; padding: 12px 12px 0; gap: 9px; }
 .project-session-group { border-top: 1px solid var(--component-line); border-bottom: 0; }
 .project-session-group__heading strong { font-size: var(--text-small); }
 .project-session-group__copy > span { font-size: var(--text-caption); }
-.project-usage { padding: 0 12px 10px 37px; }
-.project-usage .usage-trigger { background: transparent; }
+.catalog-project-heading .project-usage { grid-column: 1 / -1; min-width: 0; padding: 0 4px 8px 39px; }
+.project-usage .usage-trigger { display: block; width: 100%; border: 0; border-radius: 4px; padding: 4px 0; background: transparent; text-align: left; }
+.project-usage .usage-trigger:hover { background: transparent; color: var(--cobalt); }
+.project-usage .usage-trigger:hover .usage-trigger-text { text-decoration: underline; text-underline-offset: 3px; }
+.project-usage .usage-trigger > svg { display: none; }
+.project-usage .usage-trigger-text { display: block; }
+.project-usage .usage-trigger-text small::before { content: " · "; }
 .session-list { margin: 0; padding: 0 8px 8px; }
 .session-list::before, .session-row::before { display: none; }
 .session-row { padding: 14px 12px; border: 1px solid var(--component-line); border-radius: 12px; margin: 4px 0; }
