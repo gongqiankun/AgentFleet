@@ -280,6 +280,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .command-execution .command-block, .command-execution .output-block { white-space: pre; overflow-wrap: normal; word-break: normal; font-family: var(--mono); font-size: var(--text-small); line-height: 1.75; color: var(--ink); }
 .command-block, .output-block { font-size: var(--text-caption); line-height: 1.7; border-radius: 12px; }
 
+.command-execution .command-execution__log { height: 180px; max-height: 180px; }
+.command-execution--expanded .command-execution__log { height: auto; max-height: none; }
 .command-execution__log > div { min-width: 0; }
 .execution-code + .execution-code { border-top: 1px solid var(--line); }
 .execution-code__label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px 0; color: var(--muted); font-size: var(--text-caption); }

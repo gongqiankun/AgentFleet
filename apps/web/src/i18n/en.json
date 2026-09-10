@@ -1386,5 +1386,7 @@
   "查看图片": "View image",
   "输出": "Output",
   "复制输出": "Copy output",
-  "自动换行": "Wrap lines"
+  "自动换行": "Wrap lines",
+  "恢复预览": "Back to preview",
+  "展开全部": "Expand all"
 }
