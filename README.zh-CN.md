@@ -19,7 +19,7 @@
 
 <p align="center">自行部署的 Codex 网页控制台，支持远程控制与多主机会话管理。<br>提供中文和英文界面。</p>
 
-![AgentFleets 工作台：演示主机、项目会话和实时对话](docs/assets/workspace-zh.png)
+![AgentFleets 工作台：周额度剩余、项目与会话 token 消耗、模型与推理强度快捷配置](docs/assets/workspace-zh.png)
 
 <p align="center"><sub>真实产品界面，使用虚构演示数据，不包含生产账号、主机或会话。</sub></p>
 

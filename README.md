@@ -19,7 +19,7 @@ Keep execution in your own environment.</p>
 
 <p align="center">A self-hosted Codex web UI for remote control and multi-host session management.<br>Available in English and Simplified Chinese.</p>
 
-![AgentFleets workspace showing three demo hosts, project sessions, and a live conversation](docs/assets/workspace-en.png)
+![AgentFleets workspace showing remaining weekly quota, project and session token usage, and quick model settings](docs/assets/workspace-en.png)
 
 <p align="center"><sub>Actual interface with synthetic demo data. No production accounts, hosts, or conversations are shown.</sub></p>
 
