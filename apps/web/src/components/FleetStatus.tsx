@@ -1,5 +1,5 @@
 import { t, localized } from "../i18n";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Activity, ArrowUpRight, ChevronRight, Layers3, Server, X } from "lucide-react";
 import type { FleetSession, Machine } from "../lib/types";
@@ -12,9 +12,9 @@ const categories = localized(() => ([
   { id: "managed", label: t("已接管"), title: t("已接管的会话"), icon: Layers3 },
 ] as const));
 
-export function FleetStatus({ machines, sessions, connected, onSession, onMachine }: {
+export function FleetStatus({ machines, sessions, connected, onSession, onMachine, utility }: {
   machines: Machine[]; sessions: FleetSession[]; connected: boolean;
-  onSession: (id: string) => void; onMachine: (id: string) => void;
+  onSession: (id: string) => void; onMachine: (id: string) => void; utility?: ReactNode;
 }) {
   const [category, setCategory] = useState<Category>();
   const dialog = useRef<HTMLElement>(null);
@@ -50,6 +50,7 @@ export function FleetStatus({ machines, sessions, connected, onSession, onMachin
       {categories.map(({ id, label, title, icon: Icon }) => <button key={id} type="button" className={`fleet-shortcut fleet-shortcut--${id}`} aria-label={t("查看{0}（{1}）", title, counts[id])} aria-haspopup="dialog" aria-expanded={category === id} onClick={event => { trigger.current = event.currentTarget; setCategory(id); }}>
         <span className="stat-value">{counts[id]}</span><span>{label}</span><Icon className="fleet-shortcut__icon" size={14} aria-hidden="true" /><ChevronRight size={13} aria-hidden="true" />
       </button>)}
+      {utility && <div className="rail-theme">{utility}</div>}
       <div className="relay-state"><span className={`status-dot status-dot--${connected ? "live" : "warning"}`} aria-hidden="true" /><span>{connected ? t("连接正常") : t("正在重新连接")}</span></div>
     </div>
     {selected && createPortal(<div className="activity-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) close(); }}>

@@ -306,7 +306,7 @@ describe("会话工作区", () => {
     expect(screen.queryByText("P0b")).toBeNull();
     expect(screen.queryByText("remote-restricted-v1")).toBeNull();
     expect(screen.queryByText("项目内写入 · 网络关闭")).toBeNull();
-    expect(Array.from(status.children).map(row => row.textContent)).toEqual(["2在线主机", "0运行中", "2已接管", "正在重新连接"]);
+    expect(Array.from(status.children).map(row => row.textContent)).toEqual(["2在线主机", "0运行中", "2已接管", "赛博朋克日光午夜森林", "正在重新连接"]);
     const onConnected = vi.mocked(subscribeToFleet).mock.calls[0][2];
     act(() => onConnected(true));
     expect(status.textContent).toContain("连接正常");

@@ -4,10 +4,11 @@
 .theme-switcher select { color: var(--ink); background: var(--paper-solid); border: 1px solid var(--line); border-radius: var(--radius-sm); font: inherit; font-size: 12px; padding: 6px; max-width: 116px; }
 .login-copy > .login-preferences { margin-bottom: 24px; }
 .login-preferences .language-switcher { margin-bottom: 0; }
-.topbar-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.topbar-brand > .brand-lockup { flex-shrink: 0; }
-.topbar-brand > .theme-switcher { min-width: 0; padding-left: 11px; border-left: 1px solid var(--line); }
-.topbar-brand > .theme-switcher select { min-width: 0; max-width: 82px; }
+.rail-theme { grid-column: 1 / -1; margin-top: 4px; padding: 12px 3px 2px; border-top: 1px solid var(--line); }
+.rail-theme .theme-switcher { width: 100%; gap: 9px; padding: 0 7px; }
+.rail-theme .theme-switcher > svg { flex: 0 0 auto; color: var(--cobalt); }
+.rail-theme .theme-switcher select { flex: 1; width: auto; min-width: 0; max-width: none; padding-block: 8px; }
+.mobile-theme-control { display: none; }
 
 /* Shared transitions make the palette change feel intentional without slowing navigation. */
 body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
@@ -236,25 +237,23 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
 .theme-option[aria-checked="true"] .theme-option__check { background: var(--cobalt); }
 
 @media (max-width: 700px) {
-  .theme-switcher select { max-width: 72px; font-size: 11px; }
+  .login-preferences .theme-switcher select { font-size: 11px; }
   .login-preferences { margin-bottom: 16px; }
 }
 
 @media (min-width: 661px) and (max-width: 1180px) {
   .topbar { grid-template-columns: 220px minmax(0, 1fr) 160px; }
   .topbar-actions { gap: 5px; }
-  .topbar-actions .language-switcher svg,
-  .topbar-brand .theme-switcher svg { display: none; }
+  .topbar-actions .language-switcher svg { display: none; }
   .topbar-actions .language-switcher select { max-width: 82px; }
-  .topbar-brand .theme-switcher select { max-width: 70px; }
 }
 
 @media (max-width: 660px) {
   .topbar-actions .language-switcher select { width: 58px; max-width: 58px; }
-  .topbar-brand { gap: 7px; }
-  .topbar-brand > .theme-switcher { padding-left: 7px; }
-  .topbar-brand .theme-switcher svg { display: none; }
-  .topbar-brand .theme-switcher select { width: 64px; max-width: 64px; }
+  .rail-status > .rail-theme { display: none; }
+  .mobile-theme-control { display: block; width: 170px; margin-top: 3px; padding: 8px 6px 2px; border-top: 1px solid var(--line); }
+  .mobile-theme-control .theme-switcher { width: 100%; }
+  .mobile-theme-control .theme-switcher select { flex: 1; width: auto; min-width: 0; max-width: none; min-height: 40px; }
 }
 
 @media (max-width: 900px) {
@@ -263,10 +262,6 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
 
 @media (max-width: 600px) {
   .theme-options { grid-template-columns: minmax(0, 1fr); }
-}
-
-@media (max-width: 360px) {
-  .topbar-brand .brand-lockup > span:last-child { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
