@@ -7,7 +7,11 @@ contains palettes and theme controls, and `interface.css` contains the common
 visual treatment and responsive behavior. Theme changes do not change typography
 or component geometry.
 
-- System UI fonts for text; system monospace for code and paths. Main conversation
+- Self-hosted Noto Sans SC Variable for interface text; system monospace for code
+  and paths. The pinned Fontsource package supplies WOFF2 Unicode subsets, loaded
+  on demand with `font-display: swap`; no Google Fonts runtime requests. System
+  fonts remain fallbacks. The OFL license ships under `/fonts/OFL-NotoSansSC.txt`.
+  Main conversation
   text is 1rem, secondary text .875rem, captions .8125rem. Limited timestamps and
   inline metadata use .75rem. Mobile inputs stay at least 1rem to avoid focus zoom.
 - Quiet backgrounds and separators, coordinated 10/16/24px control/surface/dialog

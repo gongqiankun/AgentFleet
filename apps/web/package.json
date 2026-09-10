@@ -10,8 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fontsource-variable/manrope": "^5.2.8",
-    "@fontsource/ibm-plex-mono": "^5.2.6",
+    "@fontsource-variable/noto-sans-sc": "5.3.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
