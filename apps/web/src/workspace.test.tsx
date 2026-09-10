@@ -330,7 +330,7 @@ describe("会话工作区", () => {
   it("底部已接管列出所有会话，选择后直接打开对应会话", async () => {
     render(<App />);
     const nav = await screen.findByRole("navigation", { name: "主导航" });
-    expect(within(nav).getByRole("button", { name: "待处理" })).toBeTruthy();
+    expect(within(nav).queryByRole("button", { name: "待处理" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "查看已接管的会话（2）" }));
     const list = screen.getByRole("dialog", { name: /已接管的会话\s*2/ });
     expect(within(list).getByRole("button", { name: /会话A/ })).toBeTruthy();

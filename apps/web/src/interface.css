@@ -250,7 +250,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .share-strip .button { font-size: var(--text-caption); }
 .conversation-viewport { min-height: 100px; }
 .timeline-scroll { overscroll-behavior-y: contain; scrollbar-gutter: stable; }
-.timeline { max-width: 860px; margin-inline: auto; padding: 28px 32px 20px 64px; }
+.timeline { width: 100%; margin: 0; padding: 28px 32px 20px 64px; }
 .timeline::before { display: none; }
 .timeline-event { padding: 0 0 32px; }
 .timeline-event__node { top: 0; left: -38px; width: 26px; height: 26px; border: 0; border-radius: 9px; background: var(--paper-solid); color: var(--muted); }

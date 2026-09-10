@@ -15,8 +15,10 @@ or component geometry.
   desktop navigation; content uses solid surfaces. Reduced-motion and
   reduced-transparency preferences are respected.
 - Desktop columns prioritize conversation width. Folding the project catalog
-  preserves its mounted state, search, and draft behavior.
-- At 900px and below, navigation moves to a stable four-item bottom bar. An open
+  preserves its mounted state, search, and draft behavior. Message content fills
+  the available conversation width, including when the catalog is folded.
+- At 900px and below, navigation moves to a bottom bar. The attention entry only
+  appears when requests are pending or its page is currently open. An open
   conversation fills the screen, with a back control and visible input area.
   Host, catalog and navigation content stays mounted underneath.
 - At 660px and below, host cards become single-column rows. The horizontal host
