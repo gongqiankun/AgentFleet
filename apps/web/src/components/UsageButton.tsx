@@ -17,8 +17,8 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const number=(n:number)=>new Intl.NumberFormat(locale(),{maximumFractionDigits:0}).format(n);
   const short=(n:number)=>new Intl.NumberFormat(locale(),{notation:"compact",maximumFractionDigits:1}).format(n);
   const date=(s:string)=>new Date(s).toLocaleString(locale());
-  const weekly=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===10080).map(w=>({w,a})))??[];
-  const label=scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):data?.recorded?t("已记录 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
+  const weekly=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===10080 && w.bucket==="codex").map(w=>({w,a})))??[];
+  const label=scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):scope==="machine"&&!!data?.accounts.some(a=>a.windows.length)?t("用量与剩余额度"):data?.recorded?t("已记录 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
   return <>
     <button type="button" className="button button--quiet usage-trigger" onClick={()=>setOpen(true)} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/>{failed?t("用量暂不可用"):label}</button>
     <dialog ref={dialog} className="modal usage-dialog" aria-label={t("用量与剩余额度")} onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>

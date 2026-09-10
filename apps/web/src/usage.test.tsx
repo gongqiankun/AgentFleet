@@ -34,3 +34,10 @@ it("labels stale account snapshots and English UI explicitly",async()=>{
  render(<UsageButton scope="machine" id="m1"/>);fireEvent.click(await screen.findByRole("button",{name:"Weekly quota: 38% remaining"}));
  expect(await screen.findByText(/Out of date/)).toBeTruthy();expect(screen.getByText("Account quota (shared)")).toBeTruthy();
 });
+
+it("keeps quota discoverable with multiple model windows and no session token reports",async()=>{
+ const account={...data.accounts[0],windows:[data.accounts[0].windows[0],{...data.accounts[0].windows[0],bucket:"model-specific",usedPercent:0,remainingPercent:100}]};
+ vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine",recorded:null,accounts:[account]});
+ render(<UsageButton scope="machine" id="m1"/>);
+ expect(await screen.findByRole("button",{name:"周额度剩余 38%"})).toBeTruthy();
+});
