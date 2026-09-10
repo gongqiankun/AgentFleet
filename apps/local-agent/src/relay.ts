@@ -441,6 +441,10 @@ export class RelayConnection {
         });
         return;
       }
+      case "quota.refresh": {
+        if (this.reconciliationReady) void this.runtime.refreshQuota().catch(error => this.logger.warn(`quota refresh failed: ${errorMessage(error)}`));
+        return;
+      }
       case "maintenance.offer": {
         if (!this.onMaintenance || !this.reconciliationReady) return;
         void this.onMaintenance(value).catch((error) => this.logger.warn(`maintenance operation failed: ${errorMessage(error)}`));

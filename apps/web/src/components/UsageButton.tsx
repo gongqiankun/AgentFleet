@@ -13,13 +13,15 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
     const controller=new AbortController();let busy=false;
     const update=async()=>{if(busy||controller.signal.aborted)return;busy=true;try{const next=await api.usage(scope,id,controller.signal);if(!next || next.coverage!=="observed-only" || !Array.isArray(next.accounts) || !Array.isArray(next.topSessions))throw new Error("Invalid usage response");if(!controller.signal.aborted){setData(next);setFailed(false);}}catch{if(!controller.signal.aborted)setFailed(true);}finally{busy=false;}};
     refreshUsage.current=()=>{void update();};
-    void update();const timer=window.setInterval(()=>{if(!document.hidden)void update();},30_000);
-    return ()=>{controller.abort();window.clearInterval(timer);};
+    if(!document.hidden)void update();
+    const onVisible=()=>{if(!document.hidden)void update();};document.addEventListener("visibilitychange",onVisible);
+    const timer=window.setInterval(()=>{if(!document.hidden)void update();},30_000);
+    return ()=>{controller.abort();window.clearInterval(timer);document.removeEventListener("visibilitychange",onVisible);};
   },[scope,id]);
   useEffect(()=>{const element=dialog.current;if(open&&!element?.open)element?.showModal?.();else if(!open&&element?.open)element.close();},[open]);
   async function refreshHost() {
     setRefreshing(true);setRefreshNotice("");
-    try { await api.hostOperation(id,"catalog.refresh",crypto.randomUUID());setRefreshNotice(t("已请求主机刷新，结果以更新时间为准。")); }
+    try { const result=await api.refreshQuota(id);setRefreshNotice(result.requested?t("已请求主机刷新，结果以更新时间为准。"):t("已复用近期刷新请求，或暂无支持额度查询的在线主机。")); }
     catch { setRefreshNotice(t("暂时无法请求刷新，请确认主机在线且没有其他维护操作。")); }
     finally { setRefreshing(false); }
   }
@@ -33,13 +35,13 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const resetAt=showWeeklyReset?weekly[0].w.resetsAt:null;
   const periodTokens=data?.quotaCycle?.recordedTokens;
   return <>
-    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/><span className="usage-trigger-text"><span>{failed?t("用量暂不可用"):label}</span>{showWeeklyReset&&<small>{resetAt?t("下次重置：{0}",date(new Date(resetAt*1000).toISOString())):t("重置时间未上报")}</small>}{scope!=="machine"&&!failed&&<small>{t("本周消耗 {0} tokens",periodTokens==null?"—":short(periodTokens))}{data?.quotaCycle?.boundaryIncomplete?" *":""}</small>}{scope==="machine"&&!failed&&fiveHour.length===1&&<><span>{t("5 小时额度剩余 {0}%",fiveHour[0].remainingPercent)}</span><small>{fiveHour[0].resetsAt?t("下次重置：{0}",date(new Date(fiveHour[0].resetsAt*1000).toISOString())):t("重置时间未上报")}</small></>}</span></button>
+    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/><span className="usage-trigger-text"><span>{failed?t("用量暂不可用"):label}</span>{showWeeklyReset&&<small>{resetAt?t("下次重置：{0}",date(new Date(resetAt*1000).toISOString())):t("重置时间未上报")}</small>}{scope==="machine"&&data?.accounts.length&&!failed?<small>{t("更新于 {0}",date(data.accounts.map(a=>a.observedAt).sort().at(-1)!))}</small>:null}{scope!=="machine"&&!failed&&<small>{t("本周消耗 {0} tokens",periodTokens==null?"—":short(periodTokens))}{data?.quotaCycle?.boundaryIncomplete?" *":""}</small>}{scope==="machine"&&!failed&&fiveHour.length===1&&<><span>{t("5 小时额度剩余 {0}%",fiveHour[0].remainingPercent)}</span><small>{fiveHour[0].resetsAt?t("下次重置：{0}",date(new Date(fiveHour[0].resetsAt*1000).toISOString())):t("重置时间未上报")}</small></>}</span></button>
     <dialog ref={dialog} className="modal usage-dialog" aria-label={t("用量与剩余额度")} onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>
       <header className="modal-head"><div><h2>{t("用量与剩余额度")}</h2><p>{t("账号看额度，项目和会话看已记录 token")}</p></div><button type="button" className="icon-button" aria-label={t("关闭用量")} onClick={()=>setOpen(false)}><X size={18}/></button></header>
       <div className="usage-body">
         {failed&&<p role="status">{t("用量读取失败，已有数据可能过期。")}</p>}
         <section><h3>{t("账号额度（共享）")}</h3>
-          {scope==="machine"&&<button type="button" className="button button--quiet" disabled={refreshing} onClick={()=>void refreshHost()}>{t("刷新主机信息与额度")}</button>}
+          {scope==="machine"&&<button type="button" className="button button--quiet" disabled={refreshing} onClick={()=>void refreshHost()}>{t("刷新额度")}</button>}
           {refreshNotice&&<p role="status">{refreshNotice}</p>}
           {!data?.accounts.length&&<p>{t("账号额度未上报；需要支持额度查询的 Codex 认证。")}</p>}
           {data?.accounts.map((account,i)=><div className="usage-account" key={i}>

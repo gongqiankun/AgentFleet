@@ -1,4 +1,6 @@
 {
+  "已复用近期刷新请求，或暂无支持额度查询的在线主机。": "A recent refresh request was reused, or no compatible host is online.",
+  "刷新额度": "Refresh quota",
   "总消耗 {0} tokens": "Total usage: {0} tokens",
   "本周消耗 {0} tokens": "This cycle: {0} tokens",
   "5 小时额度剩余 {0}%": "5-hour quota: {0}% remaining",

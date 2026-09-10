@@ -42,6 +42,8 @@ class FakeSocket {
 }
 
 class FakeRuntime {
+  quotaReads = 0;
+  async refreshQuota(): Promise<void> { this.quotaReads++; }
   readonly producerEpoch = "producer-current";
   readonly commandCalls: Array<{ command: Record<string, unknown>; generation: number }> = [];
   callbacks: RuntimeCallbacks | undefined;
@@ -405,4 +407,13 @@ test("retained old streams are stable and overflow fails closed instead of slici
   );
   assert.deepEqual(captureReconciliationStreams(store), selected.reconciliationStreams);
   store.close();
+});
+
+
+test("quota demand is telemetry only and waits for reconciliation",async t=>{
+ const {store,runtime,socket,access}=await setup();t.after(()=>store.close());
+ await enqueue(access,socket,{type:"quota.refresh"});assert.equal(runtime.quotaReads,0);
+ access.reconciliationReady=true;
+ await enqueue(access,socket,{type:"quota.refresh"});assert.equal(runtime.quotaReads,1);
+ assert.equal(runtime.commandCalls.length,0);assert.equal(socket.closeCode,undefined);
 });

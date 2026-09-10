@@ -1,3 +1,4 @@
+import { QuotaRefreshService } from "../src/quota-refresh.js";
 import test from "node:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -198,4 +199,27 @@ test("total and weekly rankings differ, exclude old usage, and follow reset adju
  assert.equal(service.read(workspaceId,"machine","a").topWeeklyProjects?.[0]?.totalTokens,1020);
  service.quota("a",null);
  assert.equal(service.read(workspaceId,"machine","a").topWeeklyProjects,null);
+});
+
+
+test("quota demand reuses fresh account data, coalesces viewers and backs off without timers",t=>{
+ const {db,service,workspaceId}=fixture();t.after(()=>db.close());
+ db.run("UPDATE machines SET agent_version='0.30.12'");
+ const at=new Date().toISOString();
+ const snapshot={accountKey:"b".repeat(64),observedAt:at,windows:[]};
+ service.quota("a",snapshot);service.quota("b",snapshot);
+ let calls=0;const refresh=new QuotaRefreshService(db,()=>{calls++;return true;});
+ assert.equal(refresh.request(workspaceId,"machine","a"),false);
+ db.run("UPDATE machine_usage SET observed_at='2026-01-01T00:00:00.000Z'");
+ assert.equal(refresh.request(workspaceId,"machine","a"),true);
+ assert.equal(refresh.request(workspaceId,"project","p-b"),false);
+ assert.equal(refresh.request(workspaceId,"session","b1"),false);
+ assert.equal(refresh.request(workspaceId,"machine","a",true),false);
+ assert.equal(calls,1);
+ t.mock.timers.enable({apis:["Date"],now:Date.now()});
+ t.mock.timers.tick(300_001);assert.equal(refresh.request(workspaceId,"machine","b"),false,"unchanged snapshot backs off");
+ t.mock.timers.tick(300_001);assert.equal(refresh.request(workspaceId,"machine","b"),true);
+ service.quota("b",{...snapshot,observedAt:new Date().toISOString()});
+ assert.equal(refresh.request(workspaceId,"machine","a"),false,"newest peer snapshot is reused");
+ assert.equal(calls,2);
 });

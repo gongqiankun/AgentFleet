@@ -5,7 +5,7 @@ import { UsageButton } from "./components/UsageButton";
 import { api } from "./lib/api";
 import type { UsageSummary } from "./lib/usage";
 import { setLocale } from "./i18n";
-vi.mock("./lib/api",()=>({api:{usage:vi.fn(),hostOperation:vi.fn()}}));
+vi.mock("./lib/api",()=>({api:{usage:vi.fn(),hostOperation:vi.fn(),refreshQuota:vi.fn()}}));
 const counts={inputTokens:800,outputTokens:200,cachedInputTokens:300,reasoningOutputTokens:100,totalTokens:1000};
 const data:UsageSummary={scope:"project",recorded:counts,quotaCycle:null,observedSessions:1,totalSessions:3,firstObservedAt:"2026-09-10T00:00:00Z",lastObservedAt:"2026-09-10T00:00:00Z",coverage:"observed-only",discontinuities:0,last:null,nativeTotal:null,modelContextWindow:null,topWeeklyProjects:null,topWeeklySessions:null,topProjects:[],topSessions:[{id:"s1",title:"Example task",totalTokens:1000}],accounts:[{sourceMachine:"Demo host",identityKnown:true,observedAt:new Date().toISOString(),stale:false,windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:62,remainingPercent:38,resetsAt:1900000000}]}]};
 beforeEach(()=>{
@@ -44,11 +44,11 @@ it("keeps quota discoverable with multiple model windows and no session token re
 
 it("page polling never requests host quota; host refresh requires an explicit click",async()=>{
  vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine"});
- vi.mocked(api.hostOperation).mockResolvedValue({id:"refresh",type:"catalog.refresh",state:"accepted",createdAt:"",updatedAt:"",result:null,error:null});
+ vi.mocked(api.refreshQuota).mockResolvedValue({requested:true});
  render(<UsageButton scope="machine" id="m1"/>);
  fireEvent.click(await screen.findByRole("button",{name:/周额度剩余 38%/}));expect(api.hostOperation).not.toHaveBeenCalled();
- fireEvent.click(screen.getByRole("button",{name:"刷新主机信息与额度"}));
- expect(await screen.findByText("已请求主机刷新，结果以更新时间为准。")).toBeTruthy();expect(api.hostOperation).toHaveBeenCalledWith("m1","catalog.refresh",expect.any(String));
+ fireEvent.click(screen.getByRole("button",{name:"刷新额度"}));
+ expect(await screen.findByText("已请求主机刷新，结果以更新时间为准。")).toBeTruthy();expect(api.refreshQuota).toHaveBeenCalledWith("m1");
 });
 it("opening usage refreshes host consumption without waiting for the polling interval",async()=>{
  vi.mocked(api.usage).mockResolvedValueOnce({...data,scope:"session"}).mockResolvedValue({...data,scope:"session",recorded:{...counts,totalTokens:2500}});

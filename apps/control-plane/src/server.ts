@@ -1,3 +1,4 @@
+import { QuotaRefreshService } from "./quota-refresh.js";
 import { UsageService } from "./usage.js";
 import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
@@ -739,8 +740,20 @@ export async function buildControlPlane(
       typeof body.clientMutationId === "string" ? body.clientMutationId : undefined,
     );
   });
+  const quotaRefresh = new QuotaRefreshService(db,machineId=>{
+    const agent=agents.get(machineId);if(!agent?.reconciliationReady)return false;
+    sendJson(agent.socket,{type:"quota.refresh"});return true;
+  });
+  app.post("/api/machines/:id/usage/refresh",{preHandler:mutate},async request=>{
+    const workspaceId=(request.principal as Principal).workspaceId,id=routeId(request);
+    usage.read(workspaceId,"machine",id);
+    return {requested:quotaRefresh.request(workspaceId,"machine",id,true)};
+  });
   for (const [path,scope] of [["sessions","session"],["projects","project"],["machines","machine"]] as const) {
-    app.get(`/api/${path}/:id/usage`, { preHandler: authenticate }, async request => usage.read((request.principal as Principal).workspaceId,scope,routeId(request)));
+    app.get(`/api/${path}/:id/usage`, { preHandler: authenticate }, async request => {
+      const workspaceId=(request.principal as Principal).workspaceId,id=routeId(request);
+      const summary=usage.read(workspaceId,scope,id);quotaRefresh.request(workspaceId,scope,id);return summary;
+    });
   }
   app.get("/api/sessions/:id", { preHandler: authenticate }, async (request) => {
     const principal = request.principal as Principal;

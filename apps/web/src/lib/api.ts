@@ -585,6 +585,7 @@ export interface RuntimeReleaseStatus {
 }
 
 export const api = {
+  refreshQuota: (id:string) => request<{requested:boolean}>(`/api/machines/${encodeURIComponent(id)}/usage/refresh`,{method:"POST",body:"{}"}),
   usage: (scope: "session" | "project" | "machine", id: string, signal?: AbortSignal) => request<UsageSummary>(`/api/${scope === "session" ? "sessions" : scope === "project" ? "projects" : "machines"}/${encodeURIComponent(id)}/usage`, { signal }),
   imageSessions: (id: string, cursor = "", signal?: AbortSignal) => request<{sessions: import("./types").ImageSessionUsage[]; nextCursor: string | null}>(`/api/machines/${encodeURIComponent(id)}/images/sessions?cursor=${encodeURIComponent(cursor)}`, { signal }),
   async imageOperation(machineId: string, logicalSessionId: string, previewOperationId?: string): Promise<HostOperation> {

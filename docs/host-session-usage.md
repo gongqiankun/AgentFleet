@@ -20,3 +20,8 @@ identified as incomplete rather than estimated.
 Projects and sessions show cumulative and current weekly-cycle token usage side
 by side. Usage details include separate total and weekly rankings. The host
 summary also shows remaining five-hour quota when Codex reports that limit.
+
+Quota snapshots are shared across hosts with a known matching account. While the
+panel is visible, stale snapshots can be refreshed on demand; repeated views are
+coalesced and failed queries back off. Token recording continues independently
+of whether the panel is open.

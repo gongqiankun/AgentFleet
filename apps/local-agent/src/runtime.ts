@@ -304,6 +304,8 @@ export class AgentRuntime {
       reason: recovered ? "已核验结束记录并解除冻结；原命令没有重发" : "核验期间会话状态发生变化，请刷新后重试" };
   }
 
+  async refreshQuota(): Promise<void> { await this.appServer?.refreshQuota?.(); }
+
   async refreshCatalog(): Promise<Record<string, unknown>> {
     void this.appServer?.refreshQuota?.();
     if (!this.canRead()) throw new AgentError("CATALOG_READ_UNSUPPORTED", this.support.readCompatibilityReason ?? this.readOnlyReasons().join("; "));
