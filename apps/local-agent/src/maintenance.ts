@@ -5,6 +5,7 @@ import type { StateStore } from "./store.js";
 import type { MaintenanceOperation, MaintenanceType } from "./types.js";
 import type { AgentAutoUpdater } from "./updater.js";
 import { readUpdateTransaction, workerHealthDiagnostics } from "./supervisor.js";
+import { collectServiceDiagnostics } from "./service-diagnostics.js";
 import { delay } from "./util.js";
 
 const TYPES: readonly MaintenanceType[] = ["catalog.refresh", "agent.update", "runtime.reconnect", "diagnostics.collect", "session.reconcile", "commands.reconcile", "images.preview", "images.clean"];
@@ -126,7 +127,7 @@ export class AgentMaintenance {
       } else if (operationType === "diagnostics.collect") {
         await this.options.runtime.refreshDiagnostics();
         const state = this.options.store.snapshot();
-        result = { agentVersion: AGENT_VERSION, support: this.options.runtime.support,
+        result = { serviceDiagnostics: await collectServiceDiagnostics(this.options.store.dataDir), agentVersion: AGENT_VERSION, support: this.options.runtime.support,
           discovery: this.options.runtime.getDiscoveryStatus(), outboxDepth: state.outbox.length,
           pendingApprovals: Object.values(state.approvals).filter((entry) => entry.state === "pending").length,
           canRestart: this.options.store.canSafelyRestart() };

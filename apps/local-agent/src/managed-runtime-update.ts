@@ -21,7 +21,7 @@ export interface ManagedRuntimeTarget {
 export function parseManagedRuntimeTarget(value: unknown): ManagedRuntimeTarget | null {
   if (value === null || value === undefined) return null;
   const target = value as ManagedRuntimeTarget;
-  if (target.schemaVersion !== 1 || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(target.revision) || !/^\d+\.\d+\.\d+$/.test(target.version) || (target.rollback !== undefined && typeof target.rollback !== "boolean") || target.schemaHash !== expectedCodexSchemaHash() || !target.artifacts || typeof target.artifacts !== "object") throw new AgentError("RUNTIME_TARGET_INVALID", "托管目标版本或协议未通过本 Agent 的兼容检查");
+  if (target.schemaVersion !== 1 || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(target.revision) || !/^\d+\.\d+\.\d+$/.test(target.version) || (target.rollback !== undefined && typeof target.rollback !== "boolean") || target.schemaHash !== expectedCodexSchemaHash(target.version) || !target.artifacts || typeof target.artifacts !== "object") throw new AgentError("RUNTIME_TARGET_INVALID", "托管目标版本或协议未通过本 Agent 的兼容检查");
   for (const [platform, asset] of Object.entries(target.artifacts)) {
     if (!["linux-x64", "darwin-arm64", "darwin-x64", "win32-x64"].includes(platform) || asset.format !== "raw" || !/^[a-f0-9]{64}$/.test(asset.sha256) || !Number.isSafeInteger(asset.size) || asset.size <= 0 || asset.size > 512 * 1024 * 1024 || asset.file !== `codex-${platform}-${target.version}-${asset.sha256.slice(0, 16)}${platform === "win32-x64" ? ".exe" : ""}`) throw new AgentError("RUNTIME_TARGET_INVALID", "托管目标安装包信息不完整或路径无效");
   }
@@ -39,7 +39,7 @@ export async function prepareManagedRuntime(options: { dataDir: string; controlP
   if (!artifact) throw new AgentError("RUNTIME_PLATFORM_UNAVAILABLE", "托管目标尚未提供本机平台安装包");
   const root = join(options.dataDir, "codex", "releases");
   await mkdir(root, { recursive: true, mode: 0o700 });
-  const stage = await mkdtemp(join(root, "candidate-"));
+  const stage = await mkdtemp(join(root, `${target.version}-`));
   const executable = join(stage, process.platform === "win32" ? "codex.exe" : "codex");
   let committed = false;
   try {
@@ -61,9 +61,12 @@ export async function prepareManagedRuntime(options: { dataDir: string; controlP
     const schema = join(stage, "schema");
     await exec(executable, ["app-server", "generate-json-schema", "--out", schema], execOptions);
     if (createHash("sha256").update(await readFile(join(schema, "codex_app_server_protocol.v2.schemas.json"))).digest("hex") !== target.schemaHash) throw new AgentError("RUNTIME_SCHEMA_FAILED", "本机平台协议验证不通过，已保留原运行时");
-    // A versioned executable avoids replacing an in-use Windows/Linux binary.
-    const permanent = join(root, `${target.version}-${randomUUID()}`);
-    await rename(stage, permanent); committed = true;
+    // This unique directory is not referenced by the profile until validation
+    // succeeds. Keep it in place: Windows can retain handles to generated helper
+    // files and reject renaming the entire directory even after Codex exits.
+    // Activation still atomically changes only the profile, preserving rollback.
+    const permanent = stage;
+    committed = true;
     return async () => {
       const path = join(options.dataDir, "runtime-profile.json");
       const temporary = `${path}.${randomUUID()}.tmp`;

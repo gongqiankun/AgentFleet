@@ -107,3 +107,14 @@ test("session list usage matches detail counters, includes zero, and keeps missi
  assert.equal(items.find(s=>s.logicalSessionId==="a2")?.recordedTokens,0);
  assert.equal(registry.getSession(principal,"b1").recordedTokens,null);
 });
+
+ test("host cumulative usage and live panel notifications share one deduplicated counter", t => {
+  const { db, workspaceId, service } = fixture(); t.after(() => db.close());
+  db.transaction(() => service.record(event("a1", 10, 2)));
+  const host = { ...event("a1", 15, 1), payload: { ...event("a1", 15, 1).payload, synchronizedFromHost: true } };
+  db.transaction(() => service.record(host));
+  db.transaction(() => service.record(host));
+  db.transaction(() => service.record(event("a1", 15, 1)));
+  db.transaction(() => service.record(event("a1", 17, 2)));
+  assert.equal(service.read(workspaceId, "session", "a1").recorded?.totalTokens, 90);
+ });

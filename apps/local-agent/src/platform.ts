@@ -74,7 +74,7 @@ export function evaluateSupport(inputs: PlatformInputs): SupportReport {
   if (inputs.codexVersion === null || !isSupportedCodexVersion(inputs.codexVersion)) {
     reasons.push(`codex-cli ${MINIMUM_CODEX_VERSION} or newer is required`);
   }
-  const expectedSchemaHash = expectedCodexSchemaHash();
+  const expectedSchemaHash = expectedCodexSchemaHash(inputs.codexVersion);
   if (inputs.codexSchemaHash !== expectedSchemaHash) {
     reasons.push("codex app-server v2 schema hash does not match the pinned compatibility profile");
   }

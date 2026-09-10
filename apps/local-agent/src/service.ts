@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { isSea } from "node:sea";
 import { AgentError } from "./errors.js";
+import { syncDirectory } from "./durable-file.js";
 import { isPathInside } from "./util.js";
 import { loadRuntimeProfile, requireRootControlledPath } from "./runtime-profile.js";
 
@@ -265,12 +266,7 @@ async function atomicWrite(path: string, contents: string): Promise<void> {
     await unlink(temporaryPath).catch(() => undefined);
     throw error;
   }
-  const directoryHandle = await open(directory, "r");
-  try {
-    await directoryHandle.sync();
-  } finally {
-    await directoryHandle.close();
-  }
+  await syncDirectory(directory);
 }
 
 function commandFailure(operation: string, result: CommandResult): AgentError {
@@ -316,7 +312,7 @@ export interface UserServiceStatus {
 }
 
 const LAUNCHD_LABEL = "cn.agentfleets.agent";
-const WINDOWS_TASK_NAME = "AgentFleet";
+const WINDOWS_TASK_NAME = "AgentFleet-Background";
 
 function xmlEscape(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
@@ -411,6 +407,40 @@ export function buildWindowsServiceLauncher(options: { launch: string[]; dataDir
   ].join("\r\n");
 }
 
+export function buildWindowsTaskRegistration(path: string, deferred = false): string {
+  quoteWindowsBatch(path); // Reject newlines/quotes before embedding a command path.
+  const argument = `/d /s /c ""${path}""`.replaceAll("'", "''");
+  const background = [
+    "$ErrorActionPreference = 'Stop'",
+    // The new task owns its process tree; retire the legacy visible task first.
+    "Stop-ScheduledTask -TaskName 'AgentFleet' -ErrorAction SilentlyContinue",
+    "Unregister-ScheduledTask -TaskName 'AgentFleet' -Confirm:$false -ErrorAction SilentlyContinue",
+    `$service = '${path.replaceAll("'", "''")}'`,
+    "$log = $service + '.log'",
+    "$err = $service + '.error.log'",
+    "foreach ($file in @($log, $err)) { if (Test-Path -LiteralPath $file) { Move-Item -LiteralPath $file -Destination ($file + '.previous') -Force } }",
+    `$child = Start-Process -FilePath $env:ComSpec -ArgumentList '${argument}' -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput $log -RedirectStandardError $err`,
+    "exit $child.ExitCode",
+  ].join("\n");
+  const encoded = Buffer.from(background, "utf16le").toString("base64");
+  return [
+    "$ErrorActionPreference = 'Stop'",
+    "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)",
+    "try {",
+    "  $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value",
+    // An all-users logon trigger requires privileges that a per-user agent lacks.
+    "  $trigger = New-ScheduledTaskTrigger -AtLogOn -User $sid",
+    "  $principal = New-ScheduledTaskPrincipal -UserId $sid -LogonType Interactive -RunLevel Limited",
+    ...(deferred ? ["  $trigger = @($trigger, (New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)))"] : []),
+    `  $action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\\WindowsPowerShell\\v1.0\\powershell.exe') -Argument '-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand ${encoded}'`,
+    "  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries",
+    `  Stop-ScheduledTask -TaskName '${WINDOWS_TASK_NAME}' -ErrorAction SilentlyContinue`,
+    `  Register-ScheduledTask -TaskName '${WINDOWS_TASK_NAME}' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null`,
+    ...(deferred ? [] : [`  Start-ScheduledTask -TaskName '${WINDOWS_TASK_NAME}'`]),
+    "} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }",
+  ].join("\n");
+}
+
 async function getLaunchdStatus(options: {
   environment?: NodeJS.ProcessEnv;
   runCommand?: CommandRunner;
@@ -489,6 +519,7 @@ async function writeAndActivateWindows(options: {
   dataDir: string;
   executable?: string;
   runCommand?: CommandRunner;
+  deferred?: boolean;
 }): Promise<UserServiceStatus> {
   const path = windowsServicePath(options.dataDir);
   const priorState = await ensureRegularUnit(path);
@@ -499,12 +530,20 @@ async function writeAndActivateWindows(options: {
   const codexExecutable = profile?.codexExecutable ?? await executablePath(managedCodex).catch(() => undefined);
   await atomicWrite(path, buildWindowsServiceLauncher({ launch, dataDir: options.dataDir, ...(codexExecutable ? { codexExecutable } : {}), ...(profile ? { codexHome: profile.codexHome } : {}) }));
   const runCommand = options.runCommand ?? defaultRunner;
-  await runCommand("schtasks.exe", ["/End", "/TN", WINDOWS_TASK_NAME]);
-  const create = await runCommand("schtasks.exe", ["/Create", "/F", "/SC", "ONLOGON", "/TN", WINDOWS_TASK_NAME, "/TR", path]);
-  if (create.exitCode !== 0) throw commandFailure("Windows scheduled-task creation", create);
-  const start = await runCommand("schtasks.exe", ["/Run", "/TN", WINDOWS_TASK_NAME]);
-  if (start.exitCode !== 0) throw commandFailure("Windows scheduled-task start", start);
+  const created = await runCommand("powershell.exe", ["-NoProfile", "-NonInteractive", "-EncodedCommand",
+    Buffer.from(buildWindowsTaskRegistration(path, options.deferred), "utf16le").toString("base64")]);
+  if (created.exitCode !== 0) throw new AgentError("WINDOWS_TASK_FAILED",
+    `Windows scheduled-task installation failed: ${created.stderr.trim() || created.stdout.trim() || `exit ${created.exitCode}`}`);
   return getWindowsStatus({ runCommand, dataDir: options.dataDir });
+}
+
+// Called only by staged Windows installs: the scheduler performs the handoff
+// after the installer has returned and the update transaction has been saved.
+export async function stageWindowsBackgroundService(dataDir: string, executable: string): Promise<void> {
+  if (process.platform !== "win32") throw new AgentError("SERVICE_PLATFORM_INVALID", "Windows only");
+  const result = await defaultRunner("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `if (Get-ScheduledTask -TaskName '${WINDOWS_TASK_NAME}' -ErrorAction SilentlyContinue) { exit 0 }; if (Get-ScheduledTask -TaskName 'AgentFleet' -ErrorAction SilentlyContinue) { exit 2 }; exit 0`]);
+  if (result.exitCode === 2) await writeAndActivateWindows({ action: "install", dataDir, executable, deferred: true });
+  else if (result.exitCode !== 0) throw new AgentError("WINDOWS_TASK_FAILED", "Unable to inspect service migration state");
 }
 
 export async function getUserServiceStatus(options: {
@@ -672,6 +711,8 @@ export async function uninstallUserService(options: {
     const runCommand = options.runCommand ?? defaultRunner;
     await runCommand("schtasks.exe", ["/End", "/TN", WINDOWS_TASK_NAME]);
     await runCommand("schtasks.exe", ["/Delete", "/F", "/TN", WINDOWS_TASK_NAME]);
+    await runCommand("schtasks.exe", ["/End", "/TN", "AgentFleet"]);
+    await runCommand("schtasks.exe", ["/Delete", "/F", "/TN", "AgentFleet"]);
     const dataDir = join(process.env.LOCALAPPDATA ?? homedir(), "AgentFleet");
     await unlink(windowsServicePath(dataDir)).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; });
     return getWindowsStatus({ runCommand, dataDir });

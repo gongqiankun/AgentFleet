@@ -5,7 +5,7 @@ import { realpathSync, statSync, mkdtempSync, readFileSync, rmSync } from "node:
 import { dirname, join, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
-import { isSupportedCodexVersion, REQUIRED_CODEX_SCHEMA_HASH } from "./constants.js";
+import { isSupportedCodexVersion, expectedCodexSchemaHash } from "./constants.js";
 
 let temp: string | undefined;
 try {
@@ -24,7 +24,7 @@ try {
   temp = mkdtempSync(join(tmpdir(), "agentfleet-verify-runtime-"));
   execFileSync(executable, ["app-server", "generate-json-schema", "--out", temp], { timeout: 15000, stdio: "ignore" });
   const schema = join(temp, "codex_app_server_protocol.v2.schemas.json");
-  if (statSync(schema).size > 32 * 1024 * 1024 || createHash("sha256").update(readFileSync(schema)).digest("hex") !== REQUIRED_CODEX_SCHEMA_HASH) throw new Error("schema mismatch");
+  if (statSync(schema).size > 32 * 1024 * 1024 || createHash("sha256").update(readFileSync(schema)).digest("hex") !== expectedCodexSchemaHash(version)) throw new Error("schema mismatch");
   process.stdout.write(version);
 } catch { process.exitCode = 1; }
 finally { if (temp) rmSync(temp, { recursive: true, force: true }); }

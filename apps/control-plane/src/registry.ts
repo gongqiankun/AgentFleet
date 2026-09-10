@@ -34,7 +34,7 @@ import type {
   MachineSummary,
   ProjectSummary,
 } from "./api-schema.js";
-import { CODEX_COMPATIBILITY_PROFILE } from "./api-schema.js";
+import { CODEX_COMPATIBILITY_PROFILE, validatedCodexSchemaHash } from "./api-schema.js";
 import type { Principal } from "./auth.js";
 import { parseCommandCapabilities, sessionActions } from "./capabilities.js";
 import { pageCursor, pageLimit, parsePageCursor, type ListOptions } from "./pagination.js";
@@ -178,7 +178,6 @@ function parseEnrollmentTicket(ticket: string): { enrollmentId: string; bootstra
 }
 
 const MINIMUM_CODEX_VERSION = CODEX_COMPATIBILITY_PROFILE.minimumCodexVersion;
-const SUPPORTED_SCHEMA_HASH = CODEX_COMPATIBILITY_PROFILE.schemaHash;
 const ENROLLMENT_RECOVERY_TTL_SECONDS = 10 * 60;
 
 function normalizeCodexVersion(value: string | null): string | null {
@@ -234,7 +233,7 @@ function compatibilityFor(
   if (normalizedCodexVersion === null || !isSupportedCodexVersion(normalizedCodexVersion)) {
     reasons.push(codexVersion ? `Codex ${codexVersion} is older than required ${MINIMUM_CODEX_VERSION}` : "Codex version was not reported");
   }
-  if (normalizeSchemaHash(schemaHash) !== SUPPORTED_SCHEMA_HASH) {
+  if (normalizeSchemaHash(schemaHash) !== validatedCodexSchemaHash(normalizedCodexVersion)) {
     reasons.push(schemaHash ? "App Server schema hash does not match the pinned schema" : "App Server schema hash was not reported");
   }
   if (reasons.length === 0) {

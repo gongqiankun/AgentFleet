@@ -8,6 +8,19 @@ import { REQUIRED_CODEX_SCHEMA_HASH } from "../src/constants.js";
 import { evaluateSupport } from "../src/platform.js";
 import { discoverProjectFromCwd, resolveProject, verifyProjectIdentity } from "../src/projects.js";
 
+test("default project aliases support Windows drive roots and directory names", () => {
+  for (const drive of ["C", "D"]) {
+    assert.equal(defaultProjectAlias(`${drive}:\\`, "win32"), `drive-${drive.toLowerCase()}`);
+    assert.equal(defaultProjectAlias(`${drive}:/`, "win32"), `drive-${drive.toLowerCase()}`);
+    assert.equal(defaultProjectAlias(`${drive}:\\work\\example-repo\\`, "win32"), "example-repo");
+  }
+  assert.equal(defaultProjectAlias("\\\\server\\share\\", "win32"), "share");
+  assert.equal(defaultProjectAlias("/", "linux"), "root");
+  for (const name of ["My Project", "中文项目", ".hidden", "a".repeat(100)]) {
+    assert.match(defaultProjectAlias(`D:\\${name}`, "win32"), /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
+  }
+});
+
 test("the published P0b Linux, macOS, and Windows profiles are write capable", () => {
   const supportedInputs = {
     platform: "linux",
@@ -27,7 +40,7 @@ test("the published P0b Linux, macOS, and Windows profiles are write capable", (
   assert.equal(compatiblePatch.supported, true);
   assert.equal(compatiblePatch.writable, true);
 
-  const compatibleNewerSeries = evaluateSupport({ ...supportedInputs, codexVersion: "0.154.0" });
+  const compatibleNewerSeries = evaluateSupport({ ...supportedInputs, codexVersion: "0.154.0", codexSchemaHash: "f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9" });
   assert.equal(compatibleNewerSeries.supported, true);
   assert.equal(compatibleNewerSeries.writable, true);
 

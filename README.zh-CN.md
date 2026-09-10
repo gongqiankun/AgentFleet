@@ -164,6 +164,8 @@ curl --fail http://127.0.0.1:3215/ready
 
 仅在本机回环地址体验时，可将两个 origin 都设为 `http://127.0.0.1:3215`，并设置 `COOKIE_SECURE=false`。不要把这套 HTTP 配置用于公开部署。
 
+托管 Codex 支持自动升级：通过兼容性检查后，在主机空闲时更新。
+
 Compose 使用命名卷保存控制面数据和已验证的运行时。升级前备份配置及数据卷；`docker compose down -v` 会删除数据卷，请勿作为普通升级步骤。仅更新网页的方式见[发布说明](docs/web-only-release.md)。
 
 ## 进一步了解

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rename, rm, link, copyFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { CODEX_COMPATIBILITY_PROFILE } from "./api-schema.js";
+import { CODEX_COMPATIBILITY_PROFILE, validatedCodexSchemaHash } from "./api-schema.js";
 import { channelControl, channelState, writeChannelJson, type RuntimeChannelState, type RuntimeTarget } from "./runtime-channel.js";
 import { downloadVerified, unpackRuntime, validateRuntime, sha256File, MAX_RUNTIME_BYTES } from "./runtime-validation.js";
 import { probeCodeModeHost } from "./code-mode-probe.js";
@@ -100,7 +100,7 @@ export class RuntimePromotion {
     await mkdir(join(this.directory, "staging"), { recursive: true, mode: 0o700 });
     await mkdir(join(this.directory, "public"), { recursive: true, mode: 0o700 });
     const stage = await mkdtemp(join(this.directory, "staging", "runtime-"));
-    const target: RuntimeTarget = { schemaVersion: 1, revision: randomUUID(), version, schemaHash: CODEX_COMPATIBILITY_PROFILE.schemaHash, validatedAt: new Date().toISOString(), artifacts: {} };
+    const target: RuntimeTarget = { schemaVersion: 1, revision: randomUUID(), version, schemaHash: validatedCodexSchemaHash(version), validatedAt: new Date().toISOString(), artifacts: {} };
     try {
       const resources = join(stage, "codex-resources");
       await mkdir(resources);
@@ -108,7 +108,7 @@ export class RuntimePromotion {
       let helperContent: { sha256: string; size: number };
       if (baseline) {
         const source = join(this.baselineDirectory, `codex-bwrap-linux-x64-${version}`);
-        if (version !== "0.153.2" || await sha256File(source) !== "01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8") throw new Error("内置隔离辅助程序校验失败");
+        if (!["0.153.2", "0.154.0"].includes(version) || await sha256File(source) !== "01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8") throw new Error("内置隔离辅助程序校验失败");
         await copyFile(source, helper);
         helperContent = { sha256: await sha256File(helper), size: (await stat(helper)).size };
       } else {

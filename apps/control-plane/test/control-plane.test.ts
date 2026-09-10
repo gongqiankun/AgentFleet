@@ -214,7 +214,7 @@ test("P0a pairing, signed agent transport, leases, commands, approvals, and dura
     agentVersion: "0.16.2",
     capabilities: { commandTypes: COMMAND_TYPES, maintenanceTypes: ["diagnostics.collect"] },
     codexVersion: "0.154.0",
-    schemaHash: "d3eace08be5dca386bfd1f1e8df650058b4113f1e10870a284d775d75517576a",
+    schemaHash: "f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9",
     credentialProtectionLevel: "software_protected",
     platform: "linux",
     platformRelease: "25.04",
@@ -452,7 +452,7 @@ test("P0a pairing, signed agent transport, leases, commands, approvals, and dura
     headers: { cookie },
   })).body);
   assert.equal(dashboardView.compatibilityProfile.validationStatus, "verified");
-  assert.equal(dashboardView.compatibilityProfile.managedCodexVersion, "0.153.2");
+  assert.equal(dashboardView.compatibilityProfile.managedCodexVersion, "0.154.0");
   assert.equal(dashboardView.compatibilityProfile.schemaHash, "d3eace08be5dca386bfd1f1e8df650058b4113f1e10870a284d775d75517576a");
   const sessionView = await app.inject({ method: "GET", url: `/api/sessions/${session.logicalSessionId}`, headers: { cookie } });
   const sessionViewBody = json<{ session: { historyCompleteness: string; turnControlVersion: number; projectLeaseVersion: number } }>(sessionView.body);

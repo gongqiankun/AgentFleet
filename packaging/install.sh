@@ -277,9 +277,13 @@ prepare_managed_codex() {
       CODEX_SCHEMA_HASH=$(sha256sum "$CODEX_SCHEMA_DIR/codex_app_server_protocol.v2.schemas.json" | awk '{print $1}')
     fi
     rm -rf -- "$CODEX_SCHEMA_DIR"
+    EXPECTED_CODEX_SCHEMA_HASH=$CODEX_COMPAT_SCHEMA_HASH
+    if [ "$CODEX_VERSION" = "0.154.0" ]; then
+      EXPECTED_CODEX_SCHEMA_HASH=f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9
+    fi
     if printf '%s\n' "$CODEX_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' && \
       version_is_at_least "$CODEX_VERSION" "0.153.2" && \
-      [ "$CODEX_SCHEMA_HASH" = "$CODEX_COMPAT_SCHEMA_HASH" ] && \
+      [ "$CODEX_SCHEMA_HASH" = "$EXPECTED_CODEX_SCHEMA_HASH" ] && \
       version_is_newer "$CODEX_VERSION" "$BEST_COMPATIBLE_VERSION"; then
       BEST_COMPATIBLE_COPY="$TEMP_DIR/codex-compatible"
       cp -- "$CODEX_TEMP" "$BEST_COMPATIBLE_COPY"
@@ -304,7 +308,7 @@ prepare_managed_codex() {
     BUNDLED_COMPACT=$(tr -d '\r\n' < "$BUNDLED_CODEX_MANIFEST")
     BUNDLED_SCHEMA_VERSION=$(printf '%s' "$BUNDLED_COMPACT" | sed -n 's/.*"schemaVersion":\([0-9]*\).*/\1/p')
     BUNDLED_VERSION=$(printf '%s' "$BUNDLED_COMPACT" | sed -n 's/.*"version":"\([0-9.]*\)".*/\1/p')
-    BUNDLED_BLOCK=$(printf '%s' "$BUNDLED_COMPACT" | sed -n 's/.*"linux-x64":{\([^}]*\)}.*/\1/p')
+    BUNDLED_BLOCK=$(printf '%s' "$BUNDLED_COMPACT" | sed -n 's/.*"linux-x64":{\("file":"codex-linux-x64-[^}]*\)}.*/\1/p')
     BUNDLED_FILE=$(printf '%s' "$BUNDLED_BLOCK" | sed -n 's/.*"file":"\([A-Za-z0-9.+-]*\)".*/\1/p')
     BUNDLED_SHA256=$(printf '%s' "$BUNDLED_BLOCK" | sed -n 's/.*"sha256":"\([0-9a-f]*\)".*/\1/p')
     BUNDLED_SIZE=$(printf '%s' "$BUNDLED_BLOCK" | sed -n 's/.*"size":\([0-9]*\).*/\1/p')
@@ -718,6 +722,10 @@ if [ "$SELECTED_CODEX_VERSION" = 0.153.2 ]; then
 fi
 case "$SELECTED_CODEX_VERSION" in
   0.153.2|0.153.4) ;;
+  0.154.0)
+    CODEX_BWRAP_VERSION=0.154.0
+    CODEX_BWRAP_SHA256=01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8
+    ;;
   *)
     if ! printf '%s\n' "${EXISTING_HELPER_HASH:-}" | grep -Eq '^[0-9a-f]{64}$'; then
       echo "installer: this managed Codex version has no verified sandbox helper record; update the runtime validator first" >&2

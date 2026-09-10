@@ -1,3 +1,4 @@
+import { readNativeUsage } from "./native-usage.js";
 import { nativeImageCleanup } from "./native-image-cleanup.js";
 import { randomUUID } from "node:crypto";
 import { setImmediate as yieldToIO } from "node:timers/promises";
@@ -206,7 +207,8 @@ export class AgentRuntime {
     // A restart or an actual scan failure must still be shown explicitly.
     const backgroundSync = this.discoveryStatus.state === "scanning" && this.completedDiscovery?.epoch === this.appServer?.appServerEpoch && !!this.appServer;
     const completed = backgroundSync ? this.completedDiscovery : undefined;
-    const visibleState = completed ? "ready" : this.discoveryStatus.state;
+    const serverUnavailable = !this.appServer && !!this.appServerFailure;
+    const visibleState = serverUnavailable ? "error" : completed ? "ready" : this.discoveryStatus.state;
     const checks = [...(this.support.checks ?? []),
       check("server", this.appServer && !this.appServerFailure ? "passed" : this.appServerFailure || !this.canRead() ? "failed" : "checking",
         this.appServer ? "APP_SERVER_CONNECTED" : "APP_SERVER_UNAVAILABLE",
@@ -218,6 +220,7 @@ export class AgentRuntime {
     const readiness = checks.some(item => item.state === "failed") ? "action_required"
       : visibleState !== "ready" ? "checking" : this.isWritable() ? "ready" : "read_only";
     return { ...this.discoveryStatus, state: visibleState, backgroundSync,
+      ...(serverUnavailable ? { error: "Codex 会话服务启动失败，项目和会话扫描暂不可用。连接服务会自动重试。" } : {}),
       syncMode: this.catalogWatcher?.mode ?? "fallback", reconcileIntervalSeconds: CATALOG_RECONCILE_MS / 1000,
       ...(completed ? { scannedCount: completed.scannedCount, discoveredCount: completed.discoveredCount, lastSuccessfulAt: completed.lastSuccessfulAt } : {}),
       scanId: completed?.scanId ?? this.discoveryScanId, discoveredProjects: this.store.snapshot().projects.length,
@@ -810,6 +813,20 @@ export class AgentRuntime {
     return imported;
   }
 
+  private async syncNativeUsage(thread: ManagedThread, snapshot: ThreadHistorySnapshot): Promise<void> {
+    if (snapshot.nativeThreadId !== thread.nativeThreadId || this.imageMaintenanceSessions.has(thread.logicalSessionId ?? "")) return;
+    const nativeUsage = this.store.snapshot().projectContentPolicies[thread.projectId]?.syncContent === false ? undefined : await readNativeUsage(this.support.codexProfile?.codexHome, snapshot.rolloutPath, thread.nativeThreadId);
+    if (nativeUsage && thread.logicalSessionId && thread.executionSegmentId && (!thread.usageObservedAt || nativeUsage.occurredAt >= thread.usageObservedAt)) {
+      const digest = sha256(canonicalJson(nativeUsage));
+      if (this.store.snapshot().managedThreads[thread.nativeThreadId]?.nativeUsageDigest !== digest) {
+        await this.emitForThread(thread, { type: "thread.usage", nativeThreadId: thread.nativeThreadId,
+          occurredAt: nativeUsage.occurredAt, payload: { usage: nativeUsage.usage, synchronizedFromHost: true } });
+        await this.store.updateManagedThread(thread.nativeThreadId, candidate => { candidate.nativeUsageDigest = digest; candidate.usageObservedAt = nativeUsage.occurredAt; });
+      }
+    }
+
+  }
+
   private async syncManagedHistory(thread: ManagedThread, snapshot: ThreadHistorySnapshot, importExisting: boolean): Promise<number> {
     if (this.imageMaintenanceSessions.has(thread.logicalSessionId ?? "") || this.historySyncJobs.has(thread.nativeThreadId)) return 0;
     this.historySyncJobs.add(thread.nativeThreadId);
@@ -823,6 +840,7 @@ export class AgentRuntime {
     importExisting: boolean,
   ): Promise<number> {
     if (snapshot.nativeThreadId !== thread.nativeThreadId) return 0;
+    await this.syncNativeUsage(thread, snapshot);
     if (snapshot.paged && this.appServer?.readHistoryPage) return this.syncPagedHistory(thread,importExisting);
     const current = this.store.snapshot().managedThreads[thread.nativeThreadId];
     if (!current) return 0;
@@ -978,7 +996,10 @@ export class AgentRuntime {
             const snapshot = await server.readThread(thread.nativeThreadId, true);
             const project = knownProjects.find((candidate) => candidate.id === thread.projectId);
             if (!project || snapshot.cwd !== (thread.sessionCwd ?? project.root)) continue;
-            if (snapshot.executionState === "running") continue;
+            if (snapshot.executionState === "running") {
+              if (thread.appServerEpoch === server.appServerEpoch) await this.syncNativeUsage(thread, snapshot);
+              continue;
+            }
             if (this.store.snapshot().projectReservations[thread.projectId] || this.store.snapshot().managedThreads[thread.nativeThreadId]?.activeTurnId) continue;
             if (thread.subscribed && thread.appServerEpoch === server.appServerEpoch) {
               await server.unsubscribeThread(thread.nativeThreadId);
@@ -1568,6 +1589,9 @@ export class AgentRuntime {
     if (event.nativeThreadId === undefined) return;
     const thread = this.store.snapshot().managedThreads[event.nativeThreadId];
     if (!thread || thread.appServerEpoch !== epoch) return;
+    if (event.type === "thread.usage") {
+      await this.store.updateManagedThread(thread.nativeThreadId, candidate => { candidate.usageObservedAt = nowIso(); });
+    }
     let mappedEvent = event;
     if (event.type === "turn.completed" && event.nativeTurnId !== undefined) {
       const completedTurnId = event.nativeTurnId;

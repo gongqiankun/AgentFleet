@@ -368,6 +368,18 @@ function historySnapshot(value: unknown, operation: string): ThreadHistorySnapsh
   };
 }
 
+export function appServerLaunchArgs(): string[] {
+  // Codex Desktop shares this home and stores additional UI/computer-use keys.
+  // Use native tolerant parsing; remote permissions remain explicit here and
+  // are verified against the effective policy of every managed thread.
+  return ["app-server", "--stdio",
+    "-c", 'approval_policy="on-request"',
+    "-c", 'sandbox_mode="workspace-write"',
+    "-c", "sandbox_workspace_write.network_access=false",
+    "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true",
+    "-c", "sandbox_workspace_write.exclude_slash_tmp=true"];
+}
+
 export class CodexAppServer implements AppServerClient {
   readonly appServerEpoch: string;
   private readonly callbacks: AppServerCallbacks;
@@ -412,21 +424,7 @@ export class CodexAppServer implements AppServerClient {
     const codexExecutable = await resolveCodexExecutable(undefined, this.environment);
     const child = spawn(
       codexExecutable,
-      [
-        "app-server",
-        "--stdio",
-        "--strict-config",
-        "-c",
-        'approval_policy="on-request"',
-        "-c",
-        'sandbox_mode="workspace-write"',
-        "-c",
-        "sandbox_workspace_write.network_access=false",
-        "-c",
-        "sandbox_workspace_write.exclude_tmpdir_env_var=true",
-        "-c",
-        "sandbox_workspace_write.exclude_slash_tmp=true",
-      ],
+      appServerLaunchArgs(),
       { stdio: ["pipe", "pipe", "pipe"], shell: false, env: this.environment },
     );
     this.child = child;

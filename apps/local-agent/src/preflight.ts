@@ -32,7 +32,7 @@ export async function checkCodeMode(executable: string): Promise<HostCheck> {
 }
 
 const execute = promisify(execFile);
-export type ProbeRunner = (file: string, args: string[], options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number; maxBuffer: number }) => Promise<{ stdout: string }>;
+export type ProbeRunner = (file: string, args: string[], options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number; maxBuffer: number }) => Promise<{ stdout: string; stderr?: string }>;
 const run: ProbeRunner = async (file, args, options) => execute(file, args, { ...options, encoding: "utf8" });
 
 export function check(id: HostCheck["id"], state: HostCheck["state"], code: string, message: string, action?: HostCheck["action"]): HostCheck {
@@ -57,8 +57,26 @@ export async function checkCodexHome(home: string): Promise<HostCheck> {
 export function sandboxArgs(help: string, platform: NodeJS.Platform): string[] {
   const legacy = platform === "darwin" ? "macos" : platform === "win32" ? "windows" : "linux";
   return ["sandbox", ...(new RegExp(`^\\s+${legacy}\\s+`, "m").test(help) ? [legacy] : []),
+    // The disposable CODEX_HOME has no Windows setup configuration. Without
+    // an explicit backend Codex downgrades workspace-write to read-only.
+    ...(platform === "win32" ? ["-c", 'windows.sandbox="unelevated"'] : []),
     "-c", 'sandbox_mode="workspace-write"', "-c", "sandbox_workspace_write.network_access=false",
     "-c", "sandbox_workspace_write.exclude_slash_tmp=true", "-c", "sandbox_workspace_write.exclude_tmpdir_env_var=true", "--"];
+}
+
+export function windowsSandboxProbe(inside: string, outside: string, marker: string): string[] {
+  const literal = (value: string) => `'${value.replaceAll("'", "''")}'`;
+  const script = [
+    "$ErrorActionPreference = 'Stop'",
+    // Windows sandbox uses ConstrainedLanguage. Native file cmdlets work there;
+    // constructing encodings or calling System.IO.File does not.
+    `try { Set-Content -LiteralPath ${literal(inside)} -Value ${literal(marker)} -Encoding UTF8 -NoNewline -ErrorAction Stop }`,
+    "catch { Write-Output ('AGENTFLEET_PROBE_INSIDE_WRITE_FAILED: ' + $_.FullyQualifiedErrorId); exit 41 }",
+    `try { Set-Content -LiteralPath ${literal(outside)} -Value ${literal(marker)} -Encoding UTF8 -NoNewline -ErrorAction Stop; exit 42 }`,
+    "catch { exit 0 }",
+  ].join("\n");
+  // Preserve Unicode and metacharacters through both Windows process launches.
+  return ["-NoProfile", "-NonInteractive", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")];
 }
 
 // A real, bounded no-model probe. All writes are in our disposable directory;
@@ -66,6 +84,7 @@ export function sandboxArgs(help: string, platform: NodeJS.Platform): string[] {
 export async function checkSandbox(executable: string, runner: ProbeRunner = run, platform = process.platform): Promise<HostCheck> {
   let directory: string | undefined;
   let phase = "start";
+  let probeOutput = "";
   try {
     directory = await mkdtemp(join(tmpdir(), "agentfleet-preflight-"));
     const project = join(directory, "project"), home = join(directory, "home");
@@ -89,25 +108,28 @@ export async function checkSandbox(executable: string, runner: ProbeRunner = run
     phase = "execute";
     const inside = join(project, "inside.txt"), outside = join(directory, "outside.txt"), marker = randomUUID();
     const command = windows
-      ? [join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"), "-NoProfile", "-NonInteractive", "-Command",
-        `& { param($inside,$outside,$marker) [IO.File]::WriteAllText($inside,$marker); try { [IO.File]::WriteAllText($outside,$marker); exit 42 } catch { exit 0 } } '${inside.replaceAll("'", "''")}' '${outside.replaceAll("'", "''")}' '${marker}'`]
+      ? [join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"), ...windowsSandboxProbe(inside, outside, marker)]
       : ["/bin/sh", "-c", 'printf %s "$3" > "$1" || exit 41; if (printf %s "$3" > "$2") 2>/dev/null; then exit 42; fi; exit 0', "agentfleet-probe", inside, outside, marker];
-    await runner(executable, [...sandboxArgs(stdout, platform), ...command], options);
+    const result = await runner(executable, [...sandboxArgs(stdout, platform), ...command], options);
+    probeOutput = result.stderr || result.stdout;
     phase = "write";
-    if (await readFile(inside, "utf8") !== marker) throw new Error("missing inside write");
+    // Windows PowerShell 5.1's UTF8 encoding writes a BOM; PowerShell 7 does not.
+    if ((await readFile(inside, "utf8")).replace(/^\uFEFF/, "") !== marker) throw new Error("missing inside write");
     phase = "isolation";
     try { await access(outside); throw new Error("outside write escaped sandbox"); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
     return check("sandbox", "passed", "SANDBOX_VERIFIED", "临时目录实测通过：项目内可写，项目外写入被阻止");
   } catch (error) {
-    const failure = error as { code?: unknown; killed?: boolean; stderr?: unknown };
+    const failure = error as { code?: unknown; killed?: boolean; stderr?: unknown; stdout?: unknown };
     const code = failure.killed ? "SANDBOX_TIMEOUT" : phase === "write" || failure.code === 41 ? "SANDBOX_WRITE_UNVERIFIED"
       : phase === "isolation" || failure.code === 42 ? "SANDBOX_ISOLATION_FAILED" : "SANDBOX_START_FAILED";
     const reason = code === "SANDBOX_TIMEOUT" ? "隔离检查超时" : code === "SANDBOX_WRITE_UNVERIFIED" ? "未能在临时项目内完成写入"
       : code === "SANDBOX_ISOLATION_FAILED" ? "未能确认项目外写入已被阻止" : "系统未能启动写入隔离检查";
     // This subprocess receives an empty temporary CODEX_HOME and no credentials.
     // Keep only its bounded diagnostic, never the exec error's entire command/env.
-    const detail = typeof failure.stderr === "string" ? failure.stderr.replace(/\u001b\[[0-9;]*m/g, "").replace(/[\r\n\t]+/g, " ").trim().slice(-600) : "";
+    const diagnostic = typeof failure.stdout === "string" && failure.stdout.includes("AGENTFLEET_PROBE_INSIDE_WRITE_FAILED:")
+      ? failure.stdout : typeof failure.stderr === "string" && failure.stderr ? failure.stderr : probeOutput;
+    const detail = diagnostic.replace(/\u001b\[[0-9;]*m/g, "").replace(/[\r\n\t]+/g, " ").trim().slice(-600);
     return check("sandbox", "failed", code, `${reason}，暂仅查看会话。不会自动关闭隔离。${detail ? `检查详情：${detail}` : "可重新自检，或检查并更新连接服务"}`, "diagnostics.collect");
   } finally {
     if (directory) await rm(directory, { recursive: true, force: true }).catch(() => undefined);

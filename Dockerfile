@@ -21,17 +21,20 @@ RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 FROM node:24-bookworm-slim AS local-agent-release
 WORKDIR /build
-ADD --checksum=sha256:177a4507b9cc7f97f113ac034697b39f6a71a876a8bd508ff6d7f52f342ebe4a \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz \
+ADD --checksum=sha256:1e6a0f2802c4199f81e1d3d9a962d64dc274693d8391f02d1f4ab457e57c4c38 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/bwrap-x86_64-unknown-linux-musl.tar.gz \
+    /build/bwrap-validated.tar.gz
+ADD --checksum=sha256:a68df7cca23c6da7cde175677df7de61c73a234add1333a1254b86d641af01f7 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz \
     /build/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz
-ADD --checksum=sha256:3471e54a6141fbcbe94cec87d14370353667d40f350ef16faa005ebc1854300b \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-code-mode-host-aarch64-apple-darwin.tar.gz \
+ADD --checksum=sha256:500ee2a02ea598ae519052e7d7d8e201d1db01986f30c214ef4143645dc86fad \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-code-mode-host-aarch64-apple-darwin.tar.gz \
     /build/codex-code-mode-host-aarch64-apple-darwin.tar.gz
-ADD --checksum=sha256:e10587fd269ee445f7de00a7a77ea4c8a44ea9986562c0de2189c0b83f32f18b \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-code-mode-host-x86_64-apple-darwin.tar.gz \
+ADD --checksum=sha256:a0fa6141e591f44dc2d86a589cfe797212317bfb9fa3a6c73131e4dbb93387fe \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-code-mode-host-x86_64-apple-darwin.tar.gz \
     /build/codex-code-mode-host-x86_64-apple-darwin.tar.gz
-ADD --checksum=sha256:aebfec2d9311531b5f4cf859e761fc2c45709ab9a085aa6f34d9c0201d0c9e5d \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-code-mode-host-x86_64-pc-windows-msvc.exe.tar.gz \
+ADD --checksum=sha256:656b475bb80d258e3244dc57a1556eb3ce2180791a649ced5e2c8e199c340891 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-code-mode-host-x86_64-pc-windows-msvc.exe.tar.gz \
     /build/codex-code-mode-host-x86_64-pc-windows-msvc.exe.tar.gz
 ADD --checksum=sha256:89ddae071e8a8126d8d12396db1b308108b9e64216b014e917bdaa02b7bc1007 \
     https://github.com/openai/codex/releases/download/rust-v0.153.2/bwrap-x86_64-unknown-linux-musl.tar.gz \
@@ -39,17 +42,17 @@ ADD --checksum=sha256:89ddae071e8a8126d8d12396db1b308108b9e64216b014e917bdaa02b7
 ADD --checksum=sha256:e7d65c75e05637e42b93f6abf9222fa0d26b537648a7a34c122b75021d41756d \
     https://github.com/openai/codex/releases/download/rust-v0.153.4/bwrap-x86_64-unknown-linux-musl.tar.gz \
     /build/bwrap-x86_64-unknown-linux-musl.tar.gz
-ADD --checksum=sha256:e8cd1160071f725d2a10cab81073dd6818fc8b096372125d27ef6e66fdf0979e \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-x86_64-unknown-linux-musl.tar.gz \
+ADD --checksum=sha256:d7e18b2597ae8f242f5f31ee9e90deef48dbc9edd634d9868fb6435d08c07f02 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-x86_64-unknown-linux-musl.tar.gz \
     /build/codex-x86_64-unknown-linux-musl.tar.gz
-ADD --checksum=sha256:91dfc270f0dfbaec16d814f1aa90d4f27e74dc9e3784e64006bef3b79fe9e09c \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-aarch64-apple-darwin.tar.gz \
+ADD --checksum=sha256:344310a0a591c1b192e04feff304321a69907c9498baaac331ca7e16ebcef9d7 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-aarch64-apple-darwin.tar.gz \
     /build/codex-aarch64-apple-darwin.tar.gz
-ADD --checksum=sha256:d84515df27b14255a1c4fe28827ba5975a095a514fe6755330e8dee5cc21ee7a \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-x86_64-apple-darwin.tar.gz \
+ADD --checksum=sha256:1219c837d8f813b493a424c125c0038b5d9ca16279bc6d3fe6ce037a3e18a6e7 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-x86_64-apple-darwin.tar.gz \
     /build/codex-x86_64-apple-darwin.tar.gz
-ADD --checksum=sha256:33e11d334e2a11c6ba3b481d63d333016b318d6c7e0fcc2252c417995f0145c7 \
-    https://github.com/openai/codex/releases/download/rust-v0.153.2/codex-x86_64-pc-windows-msvc.exe.tar.gz \
+ADD --checksum=sha256:4e96740782869faff9d424806d4419afd2ee51ea5ece6cec462912b7098497a1 \
+    https://github.com/openai/codex/releases/download/rust-v0.154.0/codex-x86_64-pc-windows-msvc.exe.tar.gz \
     /build/codex-x86_64-pc-windows-msvc.exe.tar.gz
 ADD --checksum=sha256:a1a54f46a750d2523d628d924aab61758a51c9dad3e0238beb14141be9615dd3 \
     https://nodejs.org/dist/v24.14.0/node-v24.14.0-darwin-arm64.tar.gz \
@@ -77,17 +80,17 @@ RUN AGENTFLEET_RELEASE_DIR=/build/release ./packaging/build-portable.sh \
          && tar -xzf "/build/release/$artifact" -C /build/release-smoke \
          && test "$(/build/release-smoke/agentfleet/agentfleet --version)" = "$version"; \
        fi \
-    && test "$(wc -c < /build/codex-x86_64-unknown-linux-musl.tar.gz | tr -d ' ')" = 98585206 \
+    && test "$(wc -c < /build/codex-x86_64-unknown-linux-musl.tar.gz | tr -d ' ')" = 98981886 \
     && test "$(tar -tzf /build/codex-x86_64-unknown-linux-musl.tar.gz)" = codex-x86_64-unknown-linux-musl \
     && mkdir /build/codex-smoke /build/codex-schema \
     && tar -xzf /build/codex-x86_64-unknown-linux-musl.tar.gz -C /build/codex-smoke --no-same-owner \
-    && test "$(/build/codex-smoke/codex-x86_64-unknown-linux-musl --version 2>/dev/null)" = "codex-cli 0.153.2" \
+    && test "$(/build/codex-smoke/codex-x86_64-unknown-linux-musl --version 2>/dev/null)" = "codex-cli 0.154.0" \
     && /build/codex-smoke/codex-x86_64-unknown-linux-musl app-server generate-json-schema --out /build/codex-schema >/dev/null 2>&1 \
-    && test "$(sha256sum /build/codex-schema/codex_app_server_protocol.v2.schemas.json | cut -d ' ' -f 1)" = d3eace08be5dca386bfd1f1e8df650058b4113f1e10870a284d775d75517576a \
-    && cp /build/codex-x86_64-unknown-linux-musl.tar.gz /build/release/codex-linux-x64-0.153.2.tar.gz \
-    && cp /build/codex-aarch64-apple-darwin.tar.gz /build/release/codex-darwin-arm64-0.153.2.tar.gz \
-    && cp /build/codex-x86_64-apple-darwin.tar.gz /build/release/codex-darwin-x64-0.153.2.tar.gz \
-    && cp /build/codex-x86_64-pc-windows-msvc.exe.tar.gz /build/release/codex-win32-x64-0.153.2.tar.gz \
+    && test "$(sha256sum /build/codex-schema/codex_app_server_protocol.v2.schemas.json | cut -d ' ' -f 1)" = f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9 \
+    && cp /build/codex-x86_64-unknown-linux-musl.tar.gz /build/release/codex-linux-x64-0.154.0.tar.gz \
+    && cp /build/codex-aarch64-apple-darwin.tar.gz /build/release/codex-darwin-arm64-0.154.0.tar.gz \
+    && cp /build/codex-x86_64-apple-darwin.tar.gz /build/release/codex-darwin-x64-0.154.0.tar.gz \
+    && cp /build/codex-x86_64-pc-windows-msvc.exe.tar.gz /build/release/codex-win32-x64-0.154.0.tar.gz \
     && test "$(tar -tzf /build/bwrap-x86_64-unknown-linux-musl.tar.gz)" = bwrap-x86_64-unknown-linux-musl \
     && tar -xzf /build/bwrap-x86_64-unknown-linux-musl.tar.gz -C /build/codex-smoke --no-same-owner \
     && test "$(sha256sum /build/codex-smoke/bwrap-x86_64-unknown-linux-musl | cut -d ' ' -f 1)" = 77360cb751ccedc5971391444ac86a8a33c15b04d6b4a6fe45f5d25496e62c4c \
@@ -96,7 +99,11 @@ RUN AGENTFLEET_RELEASE_DIR=/build/release ./packaging/build-portable.sh \
     && tar -xzf /build/bwrap-baseline.tar.gz -C /build/codex-smoke --no-same-owner \
     && test "$(sha256sum /build/codex-smoke/bwrap-x86_64-unknown-linux-musl | cut -d ' ' -f 1)" = 01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8 \
     && cp /build/codex-smoke/bwrap-x86_64-unknown-linux-musl /build/release/codex-bwrap-linux-x64-0.153.2 \
-    && node -e 'const fs=require("node:fs");const crypto=require("node:crypto");const names={"linux-x64":"codex-linux-x64-0.153.2.tar.gz","darwin-arm64":"codex-darwin-arm64-0.153.2.tar.gz","darwin-x64":"codex-darwin-x64-0.153.2.tar.gz","win32-x64":"codex-win32-x64-0.153.2.tar.gz"};const artifacts={};for(const [platform,file] of Object.entries(names)){const path="/build/release/"+file;artifacts[platform]={file,sha256:crypto.createHash("sha256").update(fs.readFileSync(path)).digest("hex"),size:fs.statSync(path).size,format:"tar.gz"}}const manifest={schemaVersion:1,version:"0.153.2",artifacts};fs.writeFileSync("/build/release/codex-manifest.json",JSON.stringify(manifest)+"\n")'
+    && node -e 'const fs=require("node:fs");const crypto=require("node:crypto");const names={"linux-x64":"codex-linux-x64-0.154.0.tar.gz","darwin-arm64":"codex-darwin-arm64-0.154.0.tar.gz","darwin-x64":"codex-darwin-x64-0.154.0.tar.gz","win32-x64":"codex-win32-x64-0.154.0.tar.gz"};const artifacts={};for(const [platform,file] of Object.entries(names)){const path="/build/release/"+file;artifacts[platform]={file,sha256:crypto.createHash("sha256").update(fs.readFileSync(path)).digest("hex"),size:fs.statSync(path).size,format:"tar.gz"}}const manifest={schemaVersion:1,version:"0.154.0",artifacts};fs.writeFileSync("/build/release/codex-manifest.json",JSON.stringify(manifest)+"\n")'
+
+RUN tar -xzf /build/bwrap-validated.tar.gz -C /build/codex-smoke --no-same-owner \
+    && test "$(sha256sum /build/codex-smoke/bwrap-x86_64-unknown-linux-musl | cut -d ' ' -f 1)" = 01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8 \
+    && cp /build/codex-smoke/bwrap-x86_64-unknown-linux-musl /build/release/codex-bwrap-linux-x64-0.154.0
 
 RUN node /build/packaging/prepare-code-mode.mjs /build/release
 

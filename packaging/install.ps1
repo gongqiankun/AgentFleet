@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('Onboard','Update','Stage','Rollback','Uninstall')] [string]$Mode = 'Onboard',
+  [ValidateSet('Onboard','Update','Stage','Repair','Rollback','Uninstall')] [string]$Mode = 'Onboard',
   [string]$Url,
   [string]$Ticket,
   [string]$Name = $env:COMPUTERNAME,
@@ -62,7 +62,9 @@ try {
   $expectedName = "agentfleet-win32-x64-$($manifest.version).tar.gz"
   if ($artifact.file -ne $expectedName) { throw 'installer: release name/version mismatch' }
   $archive = Join-Path $temp $artifact.file
-  Invoke-WebRequest "$BaseUrl/downloads/$($artifact.file)" -OutFile $archive
+  # Key CDN downloads by the verified digest so an earlier cached 404 cannot
+  # hide a newly published immutable release.
+  Invoke-WebRequest "$BaseUrl/downloads/$($artifact.file)?sha256=$($artifact.sha256)" -OutFile $archive
   if ((Get-Item $archive).Length -ne [long]$artifact.size) { throw 'installer: release size mismatch' }
   if ((Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant() -ne $artifact.sha256) { throw 'installer: release SHA-256 mismatch' }
   $entries = & tar.exe -tzf $archive
@@ -140,6 +142,16 @@ try {
   Move-Item -Force -LiteralPath "$StableLauncher.new" -Destination $StableLauncher
 
   Write-Host "Installed AgentFleet $($manifest.version) with Codex $codexVersion."
+  if ($Mode -eq 'Repair') {
+    # Restore a missing/partially installed task using the existing pairing.
+    # Unlike Onboard, this does not register a project or redeem another ticket.
+    & $StableLauncher service install --executable $StableLauncher --data-dir $StateRoot
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warning 'Background service installation failed. Starting the repaired agent in this window; keep it open.'
+      & $StableLauncher run --data-dir $StateRoot
+    }
+    exit $LASTEXITCODE
+  }
   if ($Mode -eq 'Update') {
     & $StableLauncher service update --executable $StableLauncher --data-dir $StateRoot
     if ($LASTEXITCODE -eq 0) { exit 0 }
@@ -152,7 +164,10 @@ try {
     }
     exit 1
   }
-  if ($Mode -eq 'Stage') { Write-Host "Staged AgentFleet $($manifest.version); the task will restart into it."; exit 0 }
+  if ($Mode -eq 'Stage') {
+    & $StableLauncher service stage-background --executable $StableLauncher --data-dir $StateRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Could not schedule background service migration' }
+    Write-Host "Staged AgentFleet $($manifest.version); the task will restart into it."; exit 0 }
   $args = @('onboard','--url',$BaseUrl,'--ticket',$Ticket,'--name',$Name,'--project',$Project,'--data-dir',$StateRoot,'--executable',$StableLauncher)
   if ($Alias) { $args += @('--alias',$Alias) }
   & $launcher @args

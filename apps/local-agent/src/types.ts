@@ -147,6 +147,8 @@ export interface ApprovalRecord {
 }
 
 export interface ManagedThread {
+  nativeUsageDigest?: string;
+  usageObservedAt?: string;
   historyPage?: { cursor: string | null; legacyAnchor?: string; complete: boolean };
   /** Fences catalog reads issued before a local metadata mutation. */
   metadataRevision?: number;

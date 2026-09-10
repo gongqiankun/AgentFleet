@@ -849,7 +849,7 @@ test("CLI file changes discover sessions and import shared history into the same
     contentEpoch: 1, createdAt: new Date().toISOString(), historySyncInitialized: true, historyItemCount: 0, subscribed: false });
   let server!: FakeAppServer; let indexOnly = false;
   let threads: DiscoveredThreadSummary[] = [];
-  const runtime = new AgentRuntime({ store, identity, pairing, support, catalogHome: home,
+  const runtime = new AgentRuntime({ store, identity, pairing, support: { ...support, codexProfile: { id: "default", osAccount: "fixture", codexHome: home, hostCodexPath: null, hostCodexVersion: null, runtimePath: "/fixture/codex", runtimeVersion: "0.154.0", source: "managed" } }, catalogHome: home,
     catalogSyncTiming: { debounceMs: 10, maxWaitMs: 30, minIntervalMs: 30 },
     appServerFactory: callbacks => {
       server = new FakeAppServer("event-epoch", callbacks);
@@ -860,9 +860,11 @@ test("CLI file changes discover sessions and import shared history into the same
   t.after(() => runtime.shutdown()); captureCallbacks(runtime); await runtime.initialize();
   assert.equal(runtime.getDiscoveryStatus().syncMode, "events");
   threads = [{ nativeThreadId: "new-cli-thread", cwd: project.root, title: "CLI-created", executionState: "idle", historyMode: "legacy" }];
-  server.histories.set(nativeThreadId, { nativeThreadId, cwd: project.root, historyMode: "legacy", executionState: "idle", updatedAt: 1,
+  server.histories.set(nativeThreadId, { nativeThreadId, cwd: project.root, rolloutPath: join(day, "rollout-fixture.jsonl"), historyMode: "legacy", executionState: "idle", updatedAt: 1,
     items: [{ nativeTurnId: "host-turn", nativeItemId: "host-item", item: { id: "host-item", type: "agentMessage", text: "fixture reply" } }] });
-  await writeFile(join(day, "rollout-fixture.jsonl"), "{}\n");
+  const usageCounts = { input_tokens: 8, output_tokens: 2, cached_input_tokens: 3, reasoning_output_tokens: 1, total_tokens: 10 };
+  await writeFile(join(day, "rollout-fixture.jsonl"), JSON.stringify({ type: "session_meta", payload: { id: nativeThreadId } }) + "\n" +
+    JSON.stringify({ type: "event_msg", timestamp: "2026-01-01T00:00:00Z", payload: { type: "token_count", info: { total_token_usage: usageCounts, last_token_usage: usageCounts } } }) + "\n");
   await waitFor(() => !!store.snapshot().discoveredThreads["new-cli-thread"] && store.snapshot().managedThreads[nativeThreadId]?.historyCursor === "host-item", "file change did not import catalog and history");
   assert.equal(indexOnly, false);
   const imported = store.snapshot().outbox.filter(event => event.nativeItemId === "host-item");
@@ -877,6 +879,11 @@ test("CLI file changes discover sessions and import shared history into the same
   await waitFor(() => runtime.getDiscoveryStatus().backgroundSync === false, "sync incomplete");
   assert.equal(store.snapshot().outbox.filter(event => event.nativeItemId === "host-item").length, 1, "history not duplicated");
   assert.equal(server.resumeCount, 0, "watching must never take over or start a real session");
+  const usageEvents = store.snapshot().outbox.filter(event => event.type === "thread.usage");
+  assert.equal(usageEvents.length, 1, "host usage is imported once across repeated scans");
+  assert.equal(usageEvents[0]?.logicalSessionId, "same-cloud-session");
+  assert.equal(usageEvents[0]?.occurredAt, "2026-01-01T00:00:00.000Z");
+
 });
 
 test("501 sessions discover incrementally without removing prior pages", async () => {
@@ -1274,6 +1281,28 @@ test("uncertain invocation remains fenced across retry and App Server restart", 
   assert.deepEqual(ackStates(acks, afterRestart.attemptId), ["claimed", "invalidated"]);
   assert.equal(servers[1]?.createThreadCount, 0);
   await runtime.shutdown();
+});
+
+test("failed initialization reports a catalog error until a successful reconnect", async t => {
+  const { store } = await fixture();
+  let fail = true;
+  const runtime = new AgentRuntime({ store, identity, pairing, support,
+    appServerFactory: callbacks => new FakeAppServer(fail ? "failed-epoch" : "recovered-epoch", callbacks,
+      fail ? new AgentError("APP_SERVER_UNAVAILABLE", "initialize: exited (1, no-signal)") : undefined),
+    restartDelay: () => 60_000,
+  });
+  t.after(() => runtime.shutdown());
+  captureCallbacks(runtime);
+  await runtime.initialize();
+  const failed = runtime.getDiscoveryStatus();
+  assert.equal(failed.state, "error");
+  assert.equal(failed.readiness, "action_required");
+  assert.match(String(failed.error), /Codex/);
+  assert.equal(failed.backgroundSync, false);
+  fail = false;
+  await runtime.reconnectRuntime();
+  assert.equal(runtime.getDiscoveryStatus().state, "ready");
+  assert.equal(runtime.getDiscoveryStatus().error, undefined);
 });
 
 test("App Server restart supervisor is single-flight with capped exponential delays and discovery", async () => {

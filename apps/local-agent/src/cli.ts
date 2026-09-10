@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { homedir, hostname } from "node:os";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, join, resolve, posix, win32 } from "node:path";
 import { isSea } from "node:sea";
 import { pathToFileURL } from "node:url";
 import { AGENT_VERSION } from "./constants.js";
@@ -26,6 +26,7 @@ import {
   TRUSTED_SYSTEM_PATH,
   uninstallUserService,
   updateUserService,
+  stageWindowsBackgroundService,
 } from "./service.js";
 import { StateStore } from "./store.js";
 import { AgentAutoUpdater } from "./updater.js";
@@ -131,10 +132,13 @@ export function defaultMachineName(): string {
   return value.slice(0, 120);
 }
 
-export function defaultProjectAlias(path: string): string {
-  const value = basename(resolve(path));
-  if (value.length === 0) throw new AgentError("PROJECT_ALIAS_INVALID", "cannot derive an alias; provide --alias");
-  return value;
+export function defaultProjectAlias(path: string, platform: NodeJS.Platform = process.platform): string {
+  const paths = platform === "win32" ? win32 : posix;
+  const resolved = paths.resolve(path);
+  const name = paths.basename(resolved);
+  const drive = platform === "win32" ? /^([A-Za-z]):/.exec(resolved)?.[1] : undefined;
+  const fallback = drive ? `drive-${drive.toLowerCase()}` : "root";
+  return name.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^[^A-Za-z0-9]+/, "").slice(0, 64) || fallback;
 }
 
 function validateMachineName(value: string): string {
@@ -492,6 +496,12 @@ async function service(args: ParsedArgs): Promise<void> {
   const action = args.words[1];
   if (!action || args.words.length !== 2) {
     throw new AgentError("ARGUMENT_INVALID", "usage: service install|status|update|rollback|uninstall");
+  }
+  if (action === "stage-background") {
+    ensureOptions(args, ["data-dir", "executable"]);
+    const dataDir = requestedDataDir(args);
+    await stageWindowsBackgroundService(dataDir, String(args.options.get("executable") ?? join(dataDir, "agentfleet.cmd")));
+    return;
   }
   if (action === "status") {
     ensureOptions(args, ["json"]);

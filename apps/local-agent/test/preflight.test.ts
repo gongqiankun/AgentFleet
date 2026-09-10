@@ -41,3 +41,19 @@ test("sandbox invocation selects legacy subcommands only if actually advertised"
     assert.equal(sandboxArgs(`Commands:\n  ${name} Run sandbox\n`, platform)[1], name);
   }
 });
+
+test("Windows no-op probes preserve bounded diagnostics instead of reporting an unexplained missing write", async () => {
+  const diagnostic = "Windows test error " + "x".repeat(1000);
+  const runner: ProbeRunner = async (_file, args, options) => {
+    assert.equal(options.env.CODEX_HOME, options.env.USERPROFILE);
+    assert.equal(options.env.OPENAI_API_KEY, undefined);
+    if (args.includes("--help")) return { stdout: "Usage: codex sandbox [OPTIONS] [COMMAND]..." };
+    assert.ok(args.includes("-EncodedCommand"));
+    assert.ok(args.includes('windows.sandbox="unelevated"'), "empty probe home must explicitly enable the Windows backend or workspace-write becomes read-only");
+    return { stdout: "", stderr: diagnostic };
+  };
+  const result = await checkSandbox("codex-test", runner, "win32");
+  assert.equal(result.code, "SANDBOX_WRITE_UNVERIFIED");
+  assert.ok(result.message.includes(diagnostic.slice(-600)));
+  assert.ok(!result.message.includes(diagnostic));
+});

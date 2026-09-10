@@ -4,6 +4,7 @@ import { copyFile, lstat, mkdir, mkdtemp, readFile, readlink, rename, symlink, u
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { AGENT_VERSION } from "./constants.js";
+import { acquireSupervisorLease, hasLiveRuntimeOwner } from "./supervisor-ownership.js";
 import { AgentError } from "./errors.js";
 import { isPathInside } from "./util.js";
 
@@ -152,6 +153,15 @@ export function workerStopExitCode(supervised: boolean): number {
 }
 
 export async function superviseAgent(dataDir: string, signal: AbortSignal): Promise<void> {
+  const release = await acquireSupervisorLease(dataDir);
+  if (!release) return;
+  try {
+    if (await hasLiveRuntimeOwner(dataDir)) return;
+    await superviseOwnedAgent(dataDir, signal);
+  } finally { release(); }
+}
+
+async function superviseOwnedAgent(dataDir: string, signal: AbortSignal): Promise<void> {
   const launcher = stableAgentExecutable(dataDir);
   while (!signal.aborted) {
     let transaction = await readUpdateTransaction(dataDir);
@@ -203,6 +213,9 @@ export async function superviseAgent(dataDir: string, signal: AbortSignal): Prom
     if (signal.aborted) return;
     const rolledBack = Boolean(verifying && !healthy && transaction);
     if (rolledBack && transaction) {
+      // A surviving worker owns the directory; never roll its profile back
+      // because a competing wrapper failed to acquire the worker lease.
+      if (await hasLiveRuntimeOwner(dataDir)) return;
       await restoreUpdateTransaction(dataDir, transaction, timedOut ? "new agent did not become healthy within 90 seconds" : `new agent exited before health confirmation (${code ?? "spawn error"})`);
     }
     if (!shouldRestartWorker(code, rolledBack)) return;

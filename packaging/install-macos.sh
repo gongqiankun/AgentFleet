@@ -73,7 +73,7 @@ MANIFEST="$TEMP_DIR/manifest.json"
 download "$CONTROL_URL/downloads/manifest.json" "$MANIFEST"
 COMPACT=$(tr -d '\r\n' < "$MANIFEST")
 VERSION=$(field "$COMPACT" version)
-BLOCK=$(printf '%s' "$COMPACT" | sed -n "s/.*\"$PLATFORM\":{\([^}]*\)}.*/\1/p")
+BLOCK=$(printf '%s' "$COMPACT" | sed -n "s/.*\"$PLATFORM\":{\(\"file\":\"codex-$PLATFORM-[^}]*\)}.*/\1/p")
 FILE=$(field "$BLOCK" file); SHA256=$(field "$BLOCK" sha256)
 SIZE=$(printf '%s' "$BLOCK" | sed -n 's/.*"size":\([0-9]*\).*/\1/p')
 case "$FILE" in "agentfleet-$PLATFORM-$VERSION.tar.gz") ;; *) echo "installer: invalid macOS release manifest" >&2; exit 1 ;; esac
@@ -113,7 +113,7 @@ else
   download "$CONTROL_URL/downloads/codex-manifest.json" "$CODEX_MANIFEST"
   CODEX_COMPACT=$(tr -d '\r\n' < "$CODEX_MANIFEST")
   CODEX_VERSION=$(field "$CODEX_COMPACT" version)
-  CODEX_BLOCK=$(printf '%s' "$CODEX_COMPACT" | sed -n "s/.*\"$PLATFORM\":{\([^}]*\)}.*/\1/p")
+  CODEX_BLOCK=$(printf '%s' "$CODEX_COMPACT" | sed -n "s/.*\"$PLATFORM\":{\(\"file\":\"codex-$PLATFORM-[^}]*\)}.*/\1/p")
   CODEX_FILE=$(field "$CODEX_BLOCK" file); CODEX_SHA=$(field "$CODEX_BLOCK" sha256)
   CODEX_SIZE=$(printf '%s' "$CODEX_BLOCK" | sed -n 's/.*"size":\([0-9]*\).*/\1/p')
   case "$CODEX_FILE" in "codex-$PLATFORM-$CODEX_VERSION.tar.gz") ;; *) echo "installer: invalid Codex manifest" >&2; exit 1 ;; esac

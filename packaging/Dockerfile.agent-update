@@ -1,8 +1,13 @@
 # Add a new Agent release to a built control-plane image, preserving every
-# previously published Agent/Codex artifact and the Codex release manifest.
+# previously published Agent/Codex artifact. The release build supplies the
+# reviewed bootstrap manifest and its matching runtime/helper artifacts.
 ARG AGENT_RELEASE_IMAGE
 ARG CONTROL_PLANE_IMAGE
 FROM ${AGENT_RELEASE_IMAGE} AS agent-release
 FROM ${CONTROL_PLANE_IMAGE}
 COPY --from=agent-release --chown=agentfleet:agentfleet /build/release/agentfleet-* /app/web/downloads/
 COPY --from=agent-release --chown=agentfleet:agentfleet /build/release/manifest.json /app/web/downloads/manifest.json
+COPY --from=agent-release --chown=agentfleet:agentfleet /build/release/codex-* /app/web/downloads/
+COPY --chown=agentfleet:agentfleet packaging/install.ps1 /app/web/install.ps1
+COPY --chown=agentfleet:agentfleet --chmod=0555 packaging/install.sh /app/web/install
+COPY --chown=agentfleet:agentfleet --chmod=0555 packaging/install-macos.sh /app/web/install-macos

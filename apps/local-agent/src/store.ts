@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import { promisify } from "node:util";
 import { MAX_PROJECTS, STATE_SCHEMA_VERSION } from "./constants.js";
 import { AgentError } from "./errors.js";
+import { syncDirectory } from "./durable-file.js";
 import type {
   AgentState,
   ApprovalRecord,
@@ -243,6 +244,7 @@ export async function platformProcessStartToken(pid: number): Promise<string | u
 }
 
 export interface EventInput {
+  occurredAt?: string;
   machineId: string;
   producerEpoch: string;
   appServerEpoch?: string;
@@ -274,7 +276,7 @@ function appendEventToState(state: AgentState, input: EventInput): DurableAgentE
     hostSeq: stream.lastProducedSeq + 1,
     schemaVersion: "1.0",
     contentEpoch,
-    occurredAt: nowIso(),
+    occurredAt: input.occurredAt ?? nowIso(),
     payload,
     payloadHash: sha256(canonicalJson(payload)),
     ...(syncContent ? {} : { payloadState: "suppressed" as const }),
@@ -578,12 +580,7 @@ export class StateStore {
       }
       await chmod(temporaryPath, 0o600);
       await rename(temporaryPath, this.legacyBackupPath);
-      const directory = await open(this.dataDir, "r");
-      try {
-        await directory.sync();
-      } finally {
-        await directory.close();
-      }
+      await syncDirectory(this.dataDir);
     }
     await chmod(this.legacyBackupPath, 0o600);
     try {

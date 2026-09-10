@@ -102,7 +102,7 @@ export const CODEX_COMPATIBILITY_PROFILE: CodexCompatibilityProfile = {
   validationStatus: "verified",
   protocol: "codex-app-server-v2",
   minimumCodexVersion: "0.153.2",
-  managedCodexVersion: "0.153.2",
+  managedCodexVersion: "0.154.0",
   schemaHash: "d3eace08be5dca386bfd1f1e8df650058b4113f1e10870a284d775d75517576a",
   lastValidatedAt: "2026-09-05T02:30:00.000Z",
   upgradePolicy: "when-promoted",
@@ -457,3 +457,8 @@ export const apiSchemas = {
     },
   },
 } as const;
+
+/** Exact release/schema pair reviewed against the native adapter regression suite. */
+export function validatedCodexSchemaHash(version: string | null): string {
+  return version === "0.154.0" ? "f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9" : CODEX_COMPATIBILITY_PROFILE.schemaHash;
+}

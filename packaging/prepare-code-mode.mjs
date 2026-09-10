@@ -6,7 +6,7 @@ import { join } from "node:path";
 // Archives are pinned by Docker ADD --checksum. Publish raw, content-addressed
 // companions so every supported OS can install them without a system package.
 const directory = process.argv[2];
-const version = "0.153.2";
+const version = "0.154.0";
 const platforms = { "linux-x64": "x86_64-unknown-linux-musl", "darwin-arm64": "aarch64-apple-darwin", "darwin-x64": "x86_64-apple-darwin", "win32-x64": "x86_64-pc-windows-msvc.exe" };
 const manifestPath = join(directory, "codex-manifest.json");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
