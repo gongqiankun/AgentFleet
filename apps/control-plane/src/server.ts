@@ -1,3 +1,4 @@
+import { createWorldWeather } from "./world-weather.js";
 import { QuotaRefreshService } from "./quota-refresh.js";
 import { UsageService } from "./usage.js";
 import { createReadStream, existsSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -653,6 +654,8 @@ export async function buildControlPlane(
     });
   });
 
+  const worldWeather = createWorldWeather();
+  app.get("/api/world-weather", { preHandler: authenticate }, async () => worldWeather());
   app.get("/api/dashboard", { preHandler: authenticate }, async (request) => ({ ...registry.dashboard(request.principal as Principal), compatibilityProfile: channelProfile(config.runtimeReleaseDir) }));
   app.get("/api/machines", { preHandler: authenticate }, async (request) => ({ machines: registry.listMachines(request.principal as Principal) }));
   app.get("/api/machines/:id", { preHandler: authenticate }, async (request) => registry.getMachine(request.principal as Principal, routeId(request)));

@@ -1,3 +1,4 @@
+import { WorldClocks } from "./components/WorldClocks";
 import { MarkdownMessage } from "./components/MarkdownMessage";
 import { SessionActions } from "./components/SessionActions";
 import { useMobileViewport } from "./lib/mobile-viewport";
@@ -1306,12 +1307,14 @@ function App() {
     <div className={`app-shell${view === "fleet" && (displayedSession || detailLoading) ? " app-shell--conversation" : ""}`}>
       <header className="topbar">
         <div className="brand-lockup"><span className="brand-glyph"><Radio size={16} strokeWidth={2.6} /></span><span>AgentFleets</span></div>
+        <WorldClocks side="left" />
         <nav className="primary-nav" aria-label={t("主导航")}>
           <button aria-current={view === "fleet" ? "page" : undefined} className={view === "fleet" ? "active" : ""} onClick={() => { setView("fleet"); }}><MonitorDot size={16} />{t("工作台")}</button>
           <button aria-current={view === "hosts" ? "page" : undefined} className={view === "hosts" ? "active" : ""} onClick={() => { setView("hosts"); }}><Server size={16} />{t("主机")}</button>
           {(dashboard.stats.approvals > 0 || view === "approvals") && <button aria-current={view === "approvals" ? "page" : undefined} className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>}
           <button aria-current={view === "security" ? "page" : undefined} className={view === "security" ? "active" : ""} onClick={() => { setView("security"); }}><ShieldCheck size={16} />{t("设置")}</button>
         </nav>
+        <WorldClocks side="right" />
         <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton></div>
       </header>
       {view === "fleet" ? <div className={`fleet-layout${catalogCollapsed ? " fleet-layout--catalog-collapsed" : ""}`}>

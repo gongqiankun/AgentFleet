@@ -628,3 +628,31 @@ html[data-keyboard-open] .inspector-head { min-height: 60px; }
 @media (max-width: 660px) {
   .session-config-dialog, .usage-dialog { bottom: max(0px, calc(100dvh - var(--visible-height, 100dvh) - var(--visible-top, 0px))); }
 }
+
+/* World time occupies the free space on either side of desktop navigation. */
+.world-clocks { display: none; }
+@media (min-width: 901px) {
+ .topbar { grid-template-columns: 160px minmax(0,3fr) auto minmax(0,4fr) 170px; gap: 14px; }
+ .world-clocks { display: grid; gap: 8px; min-width: 0; }
+ .world-clocks--left { grid-template-columns: repeat(3,minmax(0,1fr)); }
+ .world-clocks--right { grid-template-columns: repeat(4,minmax(0,1fr)); }
+ .world-clock { display: flex; flex-direction: column; align-items: center; min-width: 0; line-height: 1.25; gap: 2px; }
+ .world-clock__city { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; white-space: nowrap; }
+ .world-clock__city img { border-radius: 2px; box-shadow: 0 0 0 1px var(--line); flex-shrink: 0; }
+ .world-clock time { font-size: .9375rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+ .world-clock__weather { color: var(--muted); text-decoration: none; font-size: .6875rem; white-space: nowrap; }
+ .world-clock__weather:hover { color: var(--cobalt); text-decoration: underline; }
+}
+@media (min-width: 901px) and (max-width: 1399px) {
+ .topbar { height: 124px; grid-template-columns: minmax(0,3fr) auto minmax(0,4fr); grid-template-rows: 52px 60px; row-gap: 0; }
+ .topbar > .brand-lockup { grid-column: 1; grid-row: 1; }
+ .topbar > .primary-nav { grid-column: 2; grid-row: 1; }
+ .topbar > .topbar-actions { grid-column: 3; grid-row: 1; }
+ .world-clocks--left { grid-column: 1 / -1; grid-row: 2; width: calc((100% - 14px) * 3 / 7); justify-self: start; }
+ .world-clocks--right { grid-column: 1 / -1; grid-row: 2; width: calc((100% - 14px) * 4 / 7); justify-self: end; }
+ .fleet-layout { height: calc(100dvh - 124px); }
+}
+
+.world-clock__city { max-width: 100%; }
+.world-clock__city > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.world-clock__weather { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
