@@ -7,6 +7,12 @@
     <meta name="description" content="AgentFleets for Codex — 你的 Codex 主机控制面" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("agentfleet.theme");
+        if (["cyber", "daylight", "midnight", "forest"].includes(savedTheme)) document.documentElement.dataset.theme = savedTheme;
+      } catch {}
+    </script>
     <title>AgentFleets for Codex</title>
   </head>
   <body>

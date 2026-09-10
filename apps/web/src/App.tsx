@@ -2,6 +2,7 @@ import { RuntimeSettingsShortcut } from "./components/RuntimeSettingsShortcut";
 import type { RuntimeSummary } from "./components/CodexSettingsPanel";
 import { UsageButton } from "./components/UsageButton";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { ThemeSwitcher } from "./components/ThemeSwitcher";
 import { count, t, locale, systemText, useLocale } from "./i18n";
 import { SessionConfiguration, type ConfigurationRequest } from "./components/SessionConfiguration";
 import { FleetStatus } from "./components/FleetStatus";
@@ -205,7 +206,7 @@ function Login({ onLogin }: { onLogin: (dashboard: Dashboard) => void }) {
         <span />
       </div>
       <section className="login-copy">
-        <LanguageSwitcher />
+        <div className="login-preferences"><LanguageSwitcher /><ThemeSwitcher /></div>
         <div className="brand-lockup brand-lockup--large">
           <span className="brand-glyph"><Radio size={18} strokeWidth={2.5} /></span>
           <span>AgentFleets for Codex</span>
@@ -1291,7 +1292,7 @@ function App() {
           {(dashboard.stats.approvals > 0 || view === "approvals") && <button className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); setMobileMenu(false); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>}
           <button className={view === "security" ? "active" : ""} onClick={() => { setView("security"); setMobileMenu(false); }}><ShieldCheck size={16} />{t("设置")}</button>
         </nav>
-        <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton><IconButton label={t("打开菜单")} className="mobile-menu-button" onClick={() => setMobileMenu((value) => !value)}>{mobileMenu ? <X size={17} /> : <Menu size={17} />}</IconButton></div>
+        <div className="topbar-actions"><ThemeSwitcher compact /><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton><IconButton label={t("打开菜单")} className="mobile-menu-button" onClick={() => setMobileMenu((value) => !value)}>{mobileMenu ? <X size={17} /> : <Menu size={17} />}</IconButton></div>
       </header>
       {view === "fleet" ? <div className={`fleet-layout${catalogCollapsed ? " fleet-layout--catalog-collapsed" : ""}`}>
         <MachineRail machines={dashboard.machines} sessions={dashboard.activitySessions ?? dashboard.sessions} connected={connected} selectedId={selectedMachineId} onSession={selectSession} onHost={id => navigate({ view: "hosts", machineId: id })} onSelect={selectMachine} onPair={() => { setPairInitialCode(undefined); setPairOpen(true); }} />
