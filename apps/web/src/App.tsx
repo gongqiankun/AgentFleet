@@ -1285,14 +1285,14 @@ function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand-lockup"><span className="brand-glyph"><Radio size={16} strokeWidth={2.6} /></span><span>AgentFleets</span></div>
+        <div className="topbar-brand"><div className="brand-lockup"><span className="brand-glyph"><Radio size={16} strokeWidth={2.6} /></span><span>AgentFleets</span></div><ThemeSwitcher compact /></div>
         <nav className={`primary-nav${mobileMenu ? " primary-nav--open" : ""}`} aria-label={t("主导航")}>
           <button className={view === "fleet" ? "active" : ""} onClick={() => { setView("fleet"); setMobileMenu(false); }}><MonitorDot size={16} />{t("工作台")}</button>
           <button className={view === "hosts" ? "active" : ""} onClick={() => { setView("hosts"); setMobileMenu(false); }}><Server size={16} />{t("主机")}</button>
           {(dashboard.stats.approvals > 0 || view === "approvals") && <button className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); setMobileMenu(false); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>}
           <button className={view === "security" ? "active" : ""} onClick={() => { setView("security"); setMobileMenu(false); }}><ShieldCheck size={16} />{t("设置")}</button>
         </nav>
-        <div className="topbar-actions"><ThemeSwitcher compact /><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton><IconButton label={t("打开菜单")} className="mobile-menu-button" onClick={() => setMobileMenu((value) => !value)}>{mobileMenu ? <X size={17} /> : <Menu size={17} />}</IconButton></div>
+        <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton><IconButton label={t("打开菜单")} className="mobile-menu-button" onClick={() => setMobileMenu((value) => !value)}>{mobileMenu ? <X size={17} /> : <Menu size={17} />}</IconButton></div>
       </header>
       {view === "fleet" ? <div className={`fleet-layout${catalogCollapsed ? " fleet-layout--catalog-collapsed" : ""}`}>
         <MachineRail machines={dashboard.machines} sessions={dashboard.activitySessions ?? dashboard.sessions} connected={connected} selectedId={selectedMachineId} onSession={selectSession} onHost={id => navigate({ view: "hosts", machineId: id })} onSelect={selectMachine} onPair={() => { setPairInitialCode(undefined); setPairOpen(true); }} />

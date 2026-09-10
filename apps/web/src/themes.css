@@ -4,7 +4,10 @@
 .theme-switcher select { color: var(--ink); background: var(--paper-solid); border: 1px solid var(--line); border-radius: var(--radius-sm); font: inherit; font-size: 12px; padding: 6px; max-width: 116px; }
 .login-copy > .login-preferences { margin-bottom: 24px; }
 .login-preferences .language-switcher { margin-bottom: 0; }
-.topbar-actions .theme-switcher { margin-right: 2px; }
+.topbar-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.topbar-brand > .brand-lockup { flex-shrink: 0; }
+.topbar-brand > .theme-switcher { min-width: 0; padding-left: 11px; border-left: 1px solid var(--line); }
+.topbar-brand > .theme-switcher select { min-width: 0; max-width: 82px; }
 
 /* Shared transitions make the palette change feel intentional without slowing navigation. */
 body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
@@ -192,25 +195,78 @@ body, .topbar, .machine-rail, .fleet-main, .inspector, .composer, .modal,
 [data-theme="forest"] .login-panel { border-radius: 6px 24px 6px 24px; background: rgb(19 35 27 / .95); }
 [data-theme="forest"] .login-panel::before { width: 72px; height: 2px; border-radius: 99px; box-shadow: none; }
 
+/* Settings shows the full choice as visual samples; the header remains the quick switch. */
+.theme-settings-block { grid-column: 1 / -1; }
+.settings-view .theme-settings-block > h2 { display: flex; align-items: center; gap: 8px; }
+.settings-view .theme-settings-block > h2 svg { color: var(--cobalt); }
+.theme-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.theme-option {
+  --sample-canvas: #070c17;
+  --sample-paper: #111d30;
+  --sample-line: #3b5573;
+  --sample-accent: #52dbf5;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) 20px;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px;
+  color: var(--ink);
+  background: var(--paper-solid);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+.theme-option:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+.theme-option[aria-checked="true"] { border-color: var(--cobalt); background: var(--cobalt-soft); box-shadow: inset 0 0 0 1px var(--cobalt); }
+.theme-option--daylight { --sample-canvas: #f2f6fb; --sample-paper: #fff; --sample-line: #aebed0; --sample-accent: #1769e0; }
+.theme-option--midnight { --sample-canvas: #111018; --sample-paper: #232130; --sample-line: #4c475e; --sample-accent: #a995ff; }
+.theme-option--forest { --sample-canvas: #0d1813; --sample-paper: #1b3025; --sample-line: #42634f; --sample-accent: #e2b95f; }
+.theme-option__preview { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 5px; width: 74px; height: 48px; padding: 6px; overflow: hidden; background: var(--sample-canvas); border: 1px solid var(--sample-line); border-radius: calc(var(--radius-sm) * .7); }
+.theme-option__preview::before { content: ""; grid-row: 1 / 4; background: var(--sample-paper); border-right: 1px solid var(--sample-line); }
+.theme-option__preview i { display: block; height: 5px; background: var(--sample-paper); border-radius: 2px; }
+.theme-option__preview i:first-of-type { width: 72%; background: var(--sample-accent); }
+.theme-option__preview i:last-of-type { width: 58%; }
+.theme-option__copy { min-width: 0; }
+.theme-option__copy strong, .theme-option__copy small { display: block; }
+.theme-option__copy strong { font-size: 13px; }
+.theme-option__copy small { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.theme-option__check { display: grid; place-items: center; width: 20px; height: 20px; color: var(--canvas); background: transparent; border-radius: 50%; }
+.theme-option[aria-checked="true"] .theme-option__check { background: var(--cobalt); }
+
 @media (max-width: 700px) {
-  .topbar-actions .theme-switcher { margin-right: 0; }
-  .topbar-actions .theme-switcher svg { display: none; }
   .theme-switcher select { max-width: 72px; font-size: 11px; }
   .login-preferences { margin-bottom: 16px; }
 }
 
 @media (min-width: 661px) and (max-width: 1180px) {
-  .topbar { grid-template-columns: 200px minmax(0, 1fr) 220px; }
+  .topbar { grid-template-columns: 220px minmax(0, 1fr) 160px; }
   .topbar-actions { gap: 5px; }
   .topbar-actions .language-switcher svg,
-  .topbar-actions .theme-switcher svg { display: none; }
+  .topbar-brand .theme-switcher svg { display: none; }
   .topbar-actions .language-switcher select { max-width: 82px; }
-  .topbar-actions .theme-switcher select { max-width: 82px; }
+  .topbar-brand .theme-switcher select { max-width: 70px; }
 }
 
 @media (max-width: 660px) {
   .topbar-actions .language-switcher select { width: 58px; max-width: 58px; }
-  .topbar-actions .theme-switcher select { width: 64px; max-width: 64px; }
+  .topbar-brand { gap: 7px; }
+  .topbar-brand > .theme-switcher { padding-left: 7px; }
+  .topbar-brand .theme-switcher svg { display: none; }
+  .topbar-brand .theme-switcher select { width: 64px; max-width: 64px; }
+}
+
+@media (max-width: 900px) {
+  .theme-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .theme-options { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 360px) {
+  .topbar-brand .brand-lockup > span:last-child { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

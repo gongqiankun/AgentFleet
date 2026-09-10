@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ThemeSwitcher } from "./components/ThemeSwitcher";
+import { ThemeSettings, ThemeSwitcher } from "./components/ThemeSwitcher";
 import { setTheme } from "./lib/theme";
 
 afterEach(() => {
@@ -22,5 +22,15 @@ describe("theme switching", () => {
     expect(localStorage.getItem("agentfleet.theme")).toBe("daylight");
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute("content")).toBe("#f2f6fb");
     meta.remove();
+  });
+
+  it("offers a complete theme picker for settings", () => {
+    setTheme("cyber");
+    render(<ThemeSettings />);
+    const forest = screen.getByRole("radio", { name: /森林/ });
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    fireEvent.click(forest);
+    expect(forest.getAttribute("aria-checked")).toBe("true");
+    expect(document.documentElement.dataset.theme).toBe("forest");
   });
 });
