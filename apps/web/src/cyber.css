@@ -235,3 +235,8 @@ html[lang="en"] .session-config-trigger { white-space:nowrap; }
 .runtime-settings-shortcut > svg, .runtime-settings-shortcut > small { flex-shrink: 0; }
 .runtime-settings-shortcut:hover, .runtime-settings-shortcut:focus-visible { color: var(--cobalt); }
 .runtime-settings-shortcut:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+
+.runtime-settings-lines { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.runtime-settings-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.runtime-settings-line > small { flex-shrink: 0; font-size: inherit; opacity: .8; }
+.runtime-settings-line > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1322,5 +1322,11 @@
   "模型配置暂不可用": "Model settings unavailable",
   "下次新任务": "Next task",
   "首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。": "Your first message uses the selected settings. A running task, including follow-up instructions added to it, keeps its model.",
-  "新建会话不算一轮。首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。": "Creating a session does not start a turn. Your first message uses the selected settings. A running task, including follow-up instructions added to it, keeps its model."
+  "新建会话不算一轮。首次发送即采用所选配置；正在执行的任务及其补充指令不会切换模型。": "Creating a session does not start a turn. Your first message uses the selected settings. A running task, including follow-up instructions added to it, keeps its model.",
+  "当前任务": "Current task",
+  "后续任务": "Next task",
+  "发送使用": "Send with",
+  "强度未确认": "Effort unconfirmed",
+  "未确认": "Unconfirmed",
+  "当前任务显示主机已接受的配置，不代表供应商最终模型确认。": "Current task shows the settings accepted by the host, not confirmation of the provider’s final model."
 }
