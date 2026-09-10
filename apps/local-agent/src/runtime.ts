@@ -444,6 +444,7 @@ export class AgentRuntime {
           executionSegmentExternalId: thread.executionSegmentId,
           nativeThreadId: thread.nativeThreadId,
           managed: true,
+          ...(state.projectContentPolicies[thread.projectId]?.syncContent === false ? {} : thread.nativeUsage ? { nativeUsage: thread.nativeUsage } : {}),
           ...(thread.title ? { title: thread.title } : {}),
           titleSource: thread.titleSource ?? "preview",
           runtimeSettings: { observed: thread.observedSettings ?? null, accepted: thread.acceptedSettings ?? null, permissions: thread.acceptedPermissions ?? null, archived: thread.archived ?? false },
@@ -465,6 +466,7 @@ export class AgentRuntime {
           contentEpoch: thread.contentEpoch ?? 1,
         }];
       }), ...Object.values(state.discoveredThreads).flatMap((thread) => thread.availability === "available" ? [{
+        ...(state.projectContentPolicies[thread.projectId]?.syncContent === false ? {} : thread.nativeUsage ? { nativeUsage: thread.nativeUsage } : {}),
         externalId: thread.externalId,
         projectExternalId: thread.projectId,
         executionSegmentExternalId: thread.executionSegmentExternalId,
@@ -949,7 +951,11 @@ export class AgentRuntime {
               [...knownProjects, ...discoveredProjects.values()],
             );
             discoveredProjects.set(project.root, project);
+            const priorUsage = this.store.snapshot().managedThreads[thread.nativeThreadId]?.nativeUsage ?? this.store.snapshot().discoveredThreads[thread.nativeThreadId]?.nativeUsage;
+            const nativeUsage = this.store.snapshot().projectContentPolicies[project.id]?.syncContent === false
+              ? undefined : await readNativeUsage(this.support.codexProfile?.codexHome, thread.rolloutPath, thread.nativeThreadId) ?? priorUsage;
             observed.push({
+              ...(nativeUsage ? { nativeUsage } : {}),
               externalId: thread.nativeThreadId,
               executionSegmentExternalId: thread.nativeThreadId,
               nativeThreadId: thread.nativeThreadId,

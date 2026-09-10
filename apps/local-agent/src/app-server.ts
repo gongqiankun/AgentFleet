@@ -118,6 +118,7 @@ export interface TurnStartResult {
 }
 
 export interface DiscoveredThreadSummary {
+  rolloutPath?: string;
   archived?: boolean;
   nativeThreadId: string;
   cwd: string;
@@ -674,6 +675,7 @@ export class CodexAppServer implements AppServerClient {
         const historyMode = value.historyMode === "legacy" || value.historyMode === "paginated" ? value.historyMode : undefined;
         discovered.push({
           nativeThreadId: value.id,
+          ...(typeof value.path === "string" ? { rolloutPath: value.path } : {}),
           archived: page.archived,
           cwd: value.cwd,
           title: safeName || `Existing Codex thread ${value.id.slice(0, 8)}`,

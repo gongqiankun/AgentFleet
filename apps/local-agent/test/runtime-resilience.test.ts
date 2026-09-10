@@ -1519,3 +1519,19 @@ test("heartbeats relay cached quota without querying Codex; explicit host refres
  for(let i=0;i<20;i++)assert.equal(runtime.heartbeatPayload().quota,snapshot);
  assert.equal(reads,0);await runtime.refreshCatalog();assert.equal(reads,1);
 });
+
+test("running host usage is reported for the same managed session even when full history cannot be read", async t => {
+ const {store,projects}=await fixture();const project=projects[0]!;const id="host-running";
+ const home=await mkdtemp(join(tmpdir(),"agentfleet-host-usage-"));await mkdir(join(home,"sessions"));const path=join(home,"sessions","rollout.jsonl");
+ const counts={input_tokens:80,output_tokens:20,cached_input_tokens:30,reasoning_output_tokens:10,total_tokens:100};
+ await writeFile(path,JSON.stringify({type:"session_meta",payload:{id}})+"\n"+JSON.stringify({type:"event_msg",timestamp:new Date().toISOString(),payload:{type:"token_count",info:{total_token_usage:counts,last_token_usage:counts}}})+"\n");
+ await store.setManagedThread({nativeThreadId:id,projectId:project.id,logicalSessionId:"existing-cloud-session",executionSegmentId:"existing-segment",appServerEpoch:"previous-epoch",policyVersion:"remote-restricted-v1",policyVerified:false,contentEpoch:1,createdAt:new Date().toISOString(),historySyncInitialized:true});
+ let server!:FakeAppServer;
+ const runtime=new AgentRuntime({store,identity,pairing,support:{...support,codexProfile:{id:"default",osAccount:"fixture",codexHome:home,hostCodexPath:null,hostCodexVersion:null,runtimePath:"/fixture/codex",runtimeVersion:"0.154.0",source:"managed"}},appServerFactory:callbacks=>{
+  server=new FakeAppServer("current-epoch",callbacks);
+  return Object.assign(server,{listThreadPage:async()=>({threads:[{nativeThreadId:id,cwd:project.root,title:"same session",executionState:"running" as const,rolloutPath:path}],nextCursor:null}),readThread:async()=>{throw Error("host owns full history");}});
+ }});t.after(()=>runtime.shutdown());await runtime.initialize();
+ const sessions=runtime.helloPayload().sessions as Array<{externalId:string;nativeUsage?:{usage:{total:{totalTokens:number}}}}>;
+ assert.equal(sessions.find(s=>s.externalId==="existing-cloud-session")?.nativeUsage?.usage.total.totalTokens,100);
+ assert.equal(server.resumeCount,0);assert.equal(store.snapshot().managedThreads[id]?.logicalSessionId,"existing-cloud-session");
+});

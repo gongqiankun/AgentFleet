@@ -1,6 +1,6 @@
 {
   "name": "@agentfleet/local-agent",
-  "version": "0.30.10",
+  "version": "0.30.11",
   "private": true,
   "description": "P0b AgentFleet local agent for Linux, macOS, Windows and schema-compatible Codex hosts",
   "type": "module",

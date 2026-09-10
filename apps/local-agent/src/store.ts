@@ -1306,6 +1306,7 @@ export class StateStore {
           identityVersion: project.identityVersion,
           source: project.source ?? "explicit",
         })).sort((left, right) => left.id.localeCompare(right.id)),
+        managedUsage: Object.values(state.managedThreads).map(thread => [thread.nativeThreadId, thread.nativeUsage ?? null]),
         threads: Object.values(state.discoveredThreads).map(({
           firstSeenAt: _firstSeenAt,
           lastSeenAt: _lastSeenAt,
@@ -1365,6 +1366,7 @@ export class StateStore {
             managed.archived = thread.archived;
             if (beforeMetadata !== canonicalJson({ title: managed.title, source: managed.titleSource, archived: managed.archived })) managed.metadataRevision = (managed.metadataRevision ?? 0) + 1;
           }
+          if (current && sameTarget && thread.nativeUsage) managed.nativeUsage = structuredClone(thread.nativeUsage);
           delete state.discoveredThreads[thread.nativeThreadId];
           continue;
         }

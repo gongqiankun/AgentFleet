@@ -50,3 +50,10 @@ it("page polling never requests host quota; host refresh requires an explicit cl
  fireEvent.click(screen.getByRole("button",{name:"刷新主机信息与额度"}));
  expect(await screen.findByText("已请求主机刷新，结果以更新时间为准。")).toBeTruthy();expect(api.hostOperation).toHaveBeenCalledWith("m1","catalog.refresh",expect.any(String));
 });
+it("opening usage refreshes host consumption without waiting for the polling interval",async()=>{
+ vi.mocked(api.usage).mockResolvedValueOnce({...data,scope:"session"}).mockResolvedValue({...data,scope:"session",recorded:{...counts,totalTokens:2500}});
+ render(<UsageButton scope="session" id="s1"/>);
+ fireEvent.click(await screen.findByRole("button",{name:/已记录/}));
+ await waitFor(()=>expect(api.usage).toHaveBeenCalledTimes(2));
+ expect(await screen.findByText("2,500")).toBeTruthy();
+});

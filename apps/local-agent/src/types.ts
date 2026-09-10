@@ -147,6 +147,7 @@ export interface ApprovalRecord {
 }
 
 export interface ManagedThread {
+  nativeUsage?: { usage: Record<string, unknown>; occurredAt: string };
   nativeUsageDigest?: string;
   usageObservedAt?: string;
   historyPage?: { cursor: string | null; legacyAnchor?: string; complete: boolean };
@@ -184,6 +185,7 @@ export interface ManagedThread {
 }
 
 export interface DiscoveredThread {
+  nativeUsage?: { usage: Record<string, unknown>; occurredAt: string };
   titleSource?: "name" | "preview";
   externalId: string;
   executionSegmentExternalId: string;

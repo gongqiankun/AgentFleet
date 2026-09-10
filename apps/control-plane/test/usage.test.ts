@@ -118,3 +118,21 @@ test("session list usage matches detail counters, includes zero, and keeps missi
   db.transaction(() => service.record(event("a1", 17, 2)));
   assert.equal(service.read(workspaceId, "session", "a1").recorded?.totalTokens, 90);
  });
+
+test("catalog native usage resolves to the same session without taking ownership and deduplicates replay", t => {
+ const {db,workspaceId,service,at}=fixture();t.after(()=>db.close());
+ db.run("INSERT INTO agent_connections(connection_id,machine_id,transport_generation,connected_at) VALUES('usage-connection','a',1,?)",at);
+ const registry=new RegistryService(db,config());const connection={connectionId:"usage-connection",machineId:"a",workspaceId,transportGeneration:1,publicKey:"key-a"};
+ const hello={producerEpoch:"usage-producer",appServerEpoch:"usage-epoch",agentVersion:"0.30.11",codexVersion:"0.154.0",schemaHash:"f3487938786b729cb6773dbc9e83a7efab9c78c845db7094e8f539f373cbacc9",platform:"linux",platformRelease:"24",architecture:"x64",capacity:"idle" as const,
+  projects:[{externalId:"p-a",alias:"Project a",canonicalRoot:"/work/a",identityHash:"a",leaseVersion:1}],
+  sessions:[{externalId:"host-session",projectExternalId:"p-a",executionSegmentExternalId:"host-segment",nativeThreadId:"host-native",title:"Host session",managed:false,executionState:"running" as const,threadControlVersion:1,turnControlVersion:1,contentEpoch:1,nativeUsage:{occurredAt:new Date().toISOString(),usage:{total:counts(10),last:counts(2)}}}],reconciliationStreams:[{producerEpoch:"usage-producer",throughHostSeq:0}]};
+ const result=registry.registerHello(connection,hello);const id=result.sessions['host-session']!;
+ assert.equal(service.read(workspaceId,"session",id).recorded?.totalTokens,20);
+ registry.registerHello(connection,hello);assert.equal(service.read(workspaceId,"session",id).recorded?.totalTokens,20);
+ hello.sessions[0]!.nativeUsage={occurredAt:new Date(Date.now()+1).toISOString(),usage:{total:counts(15),last:counts(1)}};
+ registry.registerHello(connection,hello);assert.equal(service.read(workspaceId,"session",id).recorded?.totalTokens,70);
+ assert.equal(db.get<{managed:number}>("SELECT managed FROM logical_sessions WHERE logical_session_id=?",id)?.managed,0);
+ db.run("UPDATE projects SET sync_content=0 WHERE project_id=(SELECT project_id FROM logical_sessions WHERE logical_session_id=?)",id);
+ hello.sessions[0]!.nativeUsage={occurredAt:new Date(Date.now()+2).toISOString(),usage:{total:counts(20),last:counts(1)}};
+ registry.registerHello(connection,hello);assert.equal(service.read(workspaceId,"session",id).recorded?.totalTokens,70);
+});

@@ -1,3 +1,4 @@
+import { UsageService } from "./usage.js";
 import type { ControlPlaneConfig } from "./config.js";
 import { sameLeaseAccount } from "./lease-ownership.js";
 import { parseCodexCatalog, parseRuntimeSettings } from "./codex-settings.js";
@@ -2110,6 +2111,18 @@ export class RegistryService {
           connection.machineId, profileId, nativeId, logicalSessionId, segmentId,
         );
         sessionMap[externalId] = logicalSessionId;
+        const policy = projectContentPolicies[session.projectExternalId];
+        const nativeUsage = session.nativeUsage;
+        if (nativeId && policy?.syncContent && nativeUsage && typeof nativeUsage === "object" && !Array.isArray(nativeUsage)) {
+          const snapshot = nativeUsage as { occurredAt?: unknown; usage?: unknown };
+          const observedAt = typeof snapshot.occurredAt === "string" ? Date.parse(snapshot.occurredAt) : NaN;
+          const storedEpoch = this.db.get<{ content_epoch: number }>("SELECT content_epoch FROM logical_sessions WHERE logical_session_id=?", logicalSessionId)!.content_epoch;
+          if ((session.contentEpoch ?? 1) === storedEpoch && Number.isFinite(observedAt) && observedAt <= Date.now() + 60_000 && observedAt > Date.now() - policy.retentionDays * 86400_000) {
+            new UsageService(this.db).record({ logicalSessionId, nativeThreadId: nativeId, appServerEpoch: hello.appServerEpoch,
+              occurredAt: new Date(observedAt).toISOString(), payload: { usage: snapshot.usage, synchronizedFromHost: true } });
+          }
+        }
+
         this.db.run(
           "INSERT INTO reconciliation_session_targets(reconciliation_id,logical_session_id) VALUES(?,?)",
           reconciliationId,

@@ -242,6 +242,7 @@ export interface AgentProjectHello {
 }
 
 export interface AgentSessionHello {
+  nativeUsage?: unknown;
   runtimeSettings?: Record<string, unknown>;
   externalId: string;
   projectExternalId: string;

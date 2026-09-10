@@ -7,10 +7,12 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const [data,setData]=useState<UsageSummary>();const [failed,setFailed]=useState(false);const [open,setOpen]=useState(false);
   const [refreshing,setRefreshing]=useState(false);const [refreshNotice,setRefreshNotice]=useState("");
   const dialog=useRef<HTMLDialogElement>(null);
+  const refreshUsage=useRef<()=>void>(()=>{});
   useEffect(()=>{
     setData(undefined);setFailed(false);setOpen(false);setRefreshNotice("");
     const controller=new AbortController();let busy=false;
     const update=async()=>{if(busy||controller.signal.aborted)return;busy=true;try{const next=await api.usage(scope,id,controller.signal);if(!next || next.coverage!=="observed-only" || !Array.isArray(next.accounts) || !Array.isArray(next.topSessions))throw new Error("Invalid usage response");if(!controller.signal.aborted){setData(next);setFailed(false);}}catch{if(!controller.signal.aborted)setFailed(true);}finally{busy=false;}};
+    refreshUsage.current=()=>{void update();};
     void update();const timer=window.setInterval(()=>{if(!document.hidden)void update();},30_000);
     return ()=>{controller.abort();window.clearInterval(timer);};
   },[scope,id]);
@@ -27,7 +29,7 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const weekly=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===10080 && w.bucket==="codex").map(w=>({w,a})))??[];
   const label=scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):scope==="machine"&&!!data?.accounts.some(a=>a.windows.length)?t("用量与剩余额度"):data?.recorded?t("已记录 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
   return <>
-    <button type="button" className="button button--quiet usage-trigger" onClick={()=>setOpen(true)} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/>{failed?t("用量暂不可用"):label}</button>
+    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/>{failed?t("用量暂不可用"):label}</button>
     <dialog ref={dialog} className="modal usage-dialog" aria-label={t("用量与剩余额度")} onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>
       <header className="modal-head"><div><h2>{t("用量与剩余额度")}</h2><p>{t("账号看额度，项目和会话看已记录 token")}</p></div><button type="button" className="icon-button" aria-label={t("关闭用量")} onClick={()=>setOpen(false)}><X size={18}/></button></header>
       <div className="usage-body">

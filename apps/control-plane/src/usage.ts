@@ -19,6 +19,7 @@ export class UsageService {
     const total = counts(usage.total), last = counts(usage.last); if (!total || !last) return;
     if (keys.some(key => last[key] > total[key])) return;
     const previous = this.db.get<Row>("SELECT * FROM session_usage WHERE logical_session_id=?", event.logicalSessionId);
+    if (previous && object(event.payload)?.synchronizedFromHost === true && event.occurredAt < previous.observed_at) return;
     const old = previous ? counts(JSON.parse(previous.counters_json))! : undefined;
     let delta = zero(), gaps = previous?.discontinuities ?? 0;
     if (!previous) {
