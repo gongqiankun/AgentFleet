@@ -55,3 +55,24 @@ it("支持仅命令、仅输出和空记录，文本不作为 HTML 执行", () =
   fireEvent.click(screen.getByRole("button", { name: "展开代码" }));
   expect(screen.getByRole("region", { name: "命令与输出内容" }).textContent).toContain("git status");
 });
+it("点击标题、图标或头部空白展开；独立操作不触发折叠", () => {
+  const { container }=render(<CommandExecution command="echo hello" output="hello" />);
+  const title=screen.getByRole("button",{name:"命令执行"});
+  fireEvent.click(title.querySelector("svg")!);
+  expect(title.getAttribute("aria-expanded")).toBe("true");
+  fireEvent.click(screen.getByRole("button",{name:"自动换行"}));
+  expect(title.getAttribute("aria-expanded")).toBe("true");
+  expect(screen.getByRole("button",{name:"自动换行"}).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(container.querySelector(".command-execution__header")!);
+  expect(title.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(title);
+  expect(title.getAttribute("aria-expanded")).toBe("true");
+});
+it("Shell 高亮保留原始命令，终端转义序列不显示成乱码", () => {
+ const command='echo "hello" # 注释';
+ const {container}=render(<CommandExecution command={command} output={'\u001b[32mPASS\u001b[0m\n<script>literal</script>'}/>);
+ expect(container.querySelector('.command-block code')?.textContent).toBe(command);
+ expect(container.querySelector('.hljs-string')).not.toBeNull();
+ expect(container.querySelector('.output-block')?.textContent).toBe('PASS\n<script>literal</script>');
+ expect(container.querySelector('script')).toBeNull();
+});

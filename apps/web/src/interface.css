@@ -273,11 +273,36 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .timeline-event__head time { font-size: .75rem; font-family: inherit; font-variant-numeric: tabular-nums; }
 .timeline-event p { font-size: var(--text-body); line-height: 1.75; margin-top: 10px; }
 .timeline-event--user > p { background: var(--canvas); padding: 14px 18px; border-radius: 16px; }
-.command-execution { border: 1px solid var(--line); border-radius: 14px; background: var(--terminal); }
-.command-execution__header { background: transparent; font-size: var(--text-caption); padding: 8px 12px; }
+.command-execution { border: 1px solid var(--component-line); border-radius: 14px; background: var(--terminal); }
+.command-execution__header { cursor: pointer; border-bottom: 1px solid var(--line); background: var(--paper-solid); font-size: var(--text-caption); padding: 8px 12px; }
+.command-execution__header .command-execution__toggle { flex: 1; justify-content: flex-start; min-height: 44px; text-align: left; }
 .command-execution__header button { min-height: 36px; border: 0; border-radius: 8px; padding: 7px 8px; }
-.command-execution .command-block, .command-execution .output-block { white-space: pre; overflow-wrap: normal; word-break: normal; font-size: var(--text-caption); line-height: 1.7; color: var(--ink); }
+.command-execution .command-block, .command-execution .output-block { white-space: pre; overflow-wrap: normal; word-break: normal; font-family: var(--mono); font-size: var(--text-small); line-height: 1.75; color: var(--ink); }
 .command-block, .output-block { font-size: var(--text-caption); line-height: 1.7; border-radius: 12px; }
+
+.command-execution__log > div { min-width: 0; }
+.execution-code + .execution-code { border-top: 1px solid var(--line); }
+.execution-code__label { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px 0; color: var(--muted); font-size: var(--text-caption); }
+.execution-code__label button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.execution-code__label button:hover { background: var(--paper-solid); color: var(--ink); }
+.execution-code__notice { padding: 4px 14px; color: var(--muted); font-size: var(--text-caption); }
+.command-execution .command-block { background: var(--canvas); }
+.command-execution .command-block, .command-execution .output-block { padding: 10px 16px 16px; }
+.command-execution pre code { font: inherit; tab-size: 2; }
+.command-execution .command-block span { color: inherit; }
+.command-execution .command-block .execution-code__prompt { color: var(--teal); user-select: none; }
+.command-execution .command-block .hljs-string, .command-execution .output-block .hljs-string { color: var(--teal); }
+.command-execution .command-block .hljs-keyword, .command-execution .command-block .hljs-built_in, .command-execution .output-block .hljs-literal { color: var(--cobalt); }
+.command-execution .command-block .hljs-variable, .command-execution .output-block .hljs-attr, .command-execution .output-block .hljs-number { color: var(--magenta); }
+.command-execution .command-block .hljs-comment { color: var(--muted); }
+.command-execution--wrap .command-block, .command-execution--wrap .output-block { white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; }
+.command-execution__header button[aria-pressed="true"] { background: var(--cobalt-soft); color: var(--cobalt); }
+@media (max-width: 660px) {
+  .execution-code__label { padding-inline: 10px; }
+  .execution-code__label button { min-height: 44px; }
+  .command-execution .command-block, .command-execution .output-block { padding: 8px 12px 14px; font-size: var(--text-caption); }
+}
+
 .timeline-jump { min-height: 44px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 10px 16px; }
 .composer { flex-shrink: 0; min-height: 0; max-height: 45%; padding: 8px 24px 18px; border: 0; background: var(--paper); }
 .composer-input { background: var(--canvas); border: 1px solid var(--line); border-radius: 20px; }

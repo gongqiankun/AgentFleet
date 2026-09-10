@@ -1383,5 +1383,8 @@
   "复制代码": "Copy code",
   "复制失败，请手动选择代码复制。": "Copy failed. Select the code and copy it manually.",
   "表格": "Table",
-  "查看图片": "View image"
+  "查看图片": "View image",
+  "输出": "Output",
+  "复制输出": "Copy output",
+  "自动换行": "Wrap lines"
 }
