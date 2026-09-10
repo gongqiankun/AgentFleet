@@ -10,3 +10,9 @@ not required; usage remains attached to the same session.
 
 Usage covers observed activity. Earlier consumption without a recorded baseline
 may be incomplete; an unavailable count does not mean zero consumption.
+
+Weekly cycle usage covers the seven days ending at Codex's reported next weekly
+reset. It is separate from the cumulative recorded total and message retention.
+If a valid reset time is unavailable, the cycle total is not calculated.
+Historical usage that cannot be assigned precisely across a reset boundary is
+identified as incomplete rather than estimated.

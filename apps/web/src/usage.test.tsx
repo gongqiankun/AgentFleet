@@ -7,7 +7,7 @@ import type { UsageSummary } from "./lib/usage";
 import { setLocale } from "./i18n";
 vi.mock("./lib/api",()=>({api:{usage:vi.fn(),hostOperation:vi.fn()}}));
 const counts={inputTokens:800,outputTokens:200,cachedInputTokens:300,reasoningOutputTokens:100,totalTokens:1000};
-const data:UsageSummary={scope:"project",recorded:counts,recentSevenDaysTokens:1000,observedSessions:1,totalSessions:3,firstObservedAt:"2026-09-10T00:00:00Z",lastObservedAt:"2026-09-10T00:00:00Z",coverage:"observed-only",discontinuities:0,last:null,nativeTotal:null,modelContextWindow:null,topProjects:[],topSessions:[{id:"s1",title:"Example task",totalTokens:1000}],accounts:[{sourceMachine:"Demo host",identityKnown:true,observedAt:new Date().toISOString(),stale:false,windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:62,remainingPercent:38,resetsAt:1900000000}]}]};
+const data:UsageSummary={scope:"project",recorded:counts,quotaCycle:null,observedSessions:1,totalSessions:3,firstObservedAt:"2026-09-10T00:00:00Z",lastObservedAt:"2026-09-10T00:00:00Z",coverage:"observed-only",discontinuities:0,last:null,nativeTotal:null,modelContextWindow:null,topProjects:[],topSessions:[{id:"s1",title:"Example task",totalTokens:1000}],accounts:[{sourceMachine:"Demo host",identityKnown:true,observedAt:new Date().toISOString(),stale:false,windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:62,remainingPercent:38,resetsAt:1900000000}]}]};
 beforeEach(()=>{
  setLocale("zh-CN");
  if(!HTMLDialogElement.prototype.showModal)Object.defineProperty(HTMLDialogElement.prototype,"showModal",{configurable:true,writable:true,value:function(){}});
@@ -56,4 +56,9 @@ it("opening usage refreshes host consumption without waiting for the polling int
  fireEvent.click(await screen.findByRole("button",{name:/已记录/}));
  await waitFor(()=>expect(api.usage).toHaveBeenCalledTimes(2));
  expect(await screen.findByText("2,500")).toBeTruthy();
+});
+it("shows the quota reset cycle and never substitutes a rolling week for an unknown reset",async()=>{
+ vi.mocked(api.usage).mockResolvedValue({...data,quotaCycle:{startsAt:"2026-09-03T12:34:00Z",resetsAt:"2026-09-10T12:34:00Z",recordedTokens:42,boundaryIncomplete:true}});
+ render(<UsageButton scope="session" id="cycle"/>);fireEvent.click(await screen.findByRole("button",{name:/已记录/}));
+ expect(await screen.findByText("42")).toBeTruthy();expect(screen.getByText(/跨越重置时刻/)).toBeTruthy();expect(screen.queryByText("近 7 个 UTC 日期")).toBeNull();
 });

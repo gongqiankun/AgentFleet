@@ -32,7 +32,7 @@ test("usage snapshots exclude earlier history and deduplicate across repeated no
  assert.equal(service.read(workspaceId,"session","a1").recorded?.totalTokens,10);
  db.transaction(()=>service.record(event("a1",102,2,"epoch2")));
  db.transaction(()=>service.record(event("a1",101,1,"epoch2")));
- const value=service.read(workspaceId,"session","a1");assert.equal(value.recorded?.totalTokens,30);assert.equal(value.recentSevenDaysTokens,30);
+ const value=service.read(workspaceId,"session","a1");assert.equal(value.recorded?.totalTokens,30);assert.equal(value.quotaCycle,null);
  assert.equal(value.nativeTotal.totalTokens,1020);assert.equal(value.last.totalTokens,20);
  assert.equal(value.recorded?.inputTokens,24);assert.equal(value.recorded?.cachedInputTokens,9);
 });
@@ -62,9 +62,9 @@ test("shared account quota selects one newest snapshot without summing percentag
  service.quota("a",{...snapshot,accountKey:"unknown",observedAt:"2000-01-01T00:00:00Z"});
  assert.equal(service.read(workspaceId,"machine","a").accounts[0]?.stale,true);
 });
-test("usage routes require authentication and migration creates version 26",async t=>{
+test("usage routes require authentication and migration creates version 27",async t=>{
  const {app,db}=await buildControlPlane(config());t.after(()=>app.close());
- assert.equal(db.get<{user_version:number}>("PRAGMA user_version")?.user_version,26);
+ assert.equal(db.get<{user_version:number}>("PRAGMA user_version")?.user_version,27);
  for(const path of ["sessions","projects","machines"])assert.equal((await app.inject({method:"GET",url:`/api/${path}/missing/usage`})).statusCode,401);
 });
 
@@ -135,4 +135,41 @@ test("catalog native usage resolves to the same session without taking ownership
  db.run("UPDATE projects SET sync_content=0 WHERE project_id=(SELECT project_id FROM logical_sessions WHERE logical_session_id=?)",id);
  hello.sessions[0]!.nativeUsage={occurredAt:new Date(Date.now()+2).toISOString(),usage:{total:counts(20),last:counts(1)}};
  registry.registerHello(connection,hello);assert.equal(service.read(workspaceId,"session",id).recorded?.totalTokens,70);
+});
+
+test("weekly tokens follow the reported next reset, not UTC dates or a rolling seven days", t => {
+ const {db,workspaceId,service}=fixture();t.after(()=>db.close());
+ const now=Date.now(), reset=now+2*86400_000+12345, start=reset-7*86400_000;
+ const at=(time:number)=>new Date(time).toISOString();
+ const report=(time:number,total:number)=>{const e=event("a1",total,1);e.occurredAt=at(time);service.record(e);};
+ report(start-1,1);report(start,2);report(now,3);
+ const quota=(end:number)=>service.quota("a",{observedAt:at(Date.now()),windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:10,resetsAt:Math.floor(end/1000)}]});
+ // Use exact second boundaries, as supplied by Codex.
+ const exactReset=Math.floor(reset/1000)*1000, exactStart=exactReset-7*86400_000;
+ db.run("DELETE FROM usage_intervals");
+ for(const [time,total] of [[exactStart-1,90],[exactStart,10],[now,20],[exactReset,80]])db.run("INSERT INTO usage_intervals(logical_session_id,starts_at,ends_at,total_tokens,precision) VALUES('a1',?,?,?,'observation')",at(time!),at(time!),total!);
+ quota(reset);
+ const cycle=service.read(workspaceId,"session","a1").quotaCycle;
+ assert.equal(cycle?.startsAt,at(exactStart));assert.equal(cycle?.resetsAt,at(exactReset));assert.equal(cycle?.recordedTokens,30);
+ // A reset adjustment changes the range immediately, not the stored counters.
+ quota(now+1*86400_000);
+ assert.equal(service.read(workspaceId,"session","a1").quotaCycle?.recordedTokens,120);
+ service.quota("a",null);assert.equal(service.read(workspaceId,"session","a1").quotaCycle,null);
+ quota(now-1000);assert.equal(service.read(workspaceId,"session","a1").quotaCycle,null);
+});
+
+test("coarse historical data crossing a reset boundary is excluded and disclosed", t => {
+ const {db,workspaceId,service}=fixture();t.after(()=>db.close());service.record(event("a1",1));
+ const reset=Math.floor((Date.now()+2*86400_000)/1000),start=reset*1000-7*86400_000;
+ service.quota("a",{observedAt:new Date().toISOString(),windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:10,resetsAt:reset}]});
+ db.run("INSERT INTO usage_intervals(logical_session_id,starts_at,ends_at,total_tokens,precision) VALUES('a1',?,?,999,'day')",new Date(start-1000).toISOString(),new Date(start+1000).toISOString());
+ const cycle=service.read(workspaceId,"session","a1").quotaCycle;assert.equal(cycle?.recordedTokens,10);assert.equal(cycle?.boundaryIncomplete,true);
+});
+
+test("v26 daily totals survive migration without inventing intraday timing", t => {
+ const dir=mkdtempSync(join(tmpdir(),"agentfleet-cycle-migration-"));t.after(()=>rmSync(dir,{recursive:true,force:true}));const path=join(dir,"db.sqlite");
+ const original=fixture(path);original.service.record(event("a1",1));original.service.record(event("a2",2));
+ const before=original.db.all("SELECT * FROM usage_days");original.db.run("DROP TABLE usage_intervals");original.db.run("PRAGMA user_version=26");original.db.close();
+ const next=new ControlPlaneDatabase(path);t.after(()=>next.close());assert.deepEqual(next.all("SELECT * FROM usage_days"),before);
+ assert.equal(next.get<{n:number}>("SELECT COUNT(*) AS n FROM usage_intervals WHERE precision='day'")?.n,2);
 });

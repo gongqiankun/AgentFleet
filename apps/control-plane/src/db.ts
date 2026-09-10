@@ -798,7 +798,7 @@ export class ControlPlaneDatabase {
 
   private migrate(): void {
     const version = Number((this.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version);
-    if (version > 26) throw new Error(`Database schema ${version} is newer than this binary`);
+    if (version > 27) throw new Error(`Database schema ${version} is newer than this binary`);
     let currentVersion = version;
     if (version < 1) {
       this.transaction(() => {
@@ -1093,6 +1093,19 @@ export class ControlPlaneDatabase {
         machine_id TEXT PRIMARY KEY REFERENCES machines(machine_id) ON DELETE CASCADE, account_key TEXT, observed_at TEXT NOT NULL, windows_json TEXT NOT NULL
       ) STRICT;
       PRAGMA user_version=26`);
+    });
+    if (version < 27) this.transaction(() => {
+      this.sqlite.exec(`CREATE TABLE IF NOT EXISTS usage_intervals (
+        id INTEGER PRIMARY KEY,
+        logical_session_id TEXT NOT NULL REFERENCES logical_sessions(logical_session_id) ON DELETE CASCADE,
+        starts_at TEXT NOT NULL, ends_at TEXT NOT NULL, total_tokens INTEGER NOT NULL,
+        precision TEXT NOT NULL CHECK(precision IN ('day','observation'))
+      ) STRICT;
+      CREATE INDEX IF NOT EXISTS usage_intervals_session_time ON usage_intervals(logical_session_id,ends_at);
+      INSERT INTO usage_intervals(logical_session_id,starts_at,ends_at,total_tokens,precision)
+        SELECT logical_session_id,day || 'T00:00:00.000Z',day || 'T23:59:59.999Z',total_tokens,'day'
+        FROM usage_days WHERE NOT EXISTS(SELECT 1 FROM usage_intervals);
+      PRAGMA user_version=27`);
     });
   }
 

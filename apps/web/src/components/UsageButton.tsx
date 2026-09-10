@@ -47,10 +47,11 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
           <p className="usage-note">{t("账号额度由同账号的多个设备和会话共享，不能按 token 比例归属到某个项目。")}</p>
         </section>
         <section><h3>{t("已记录 token 消耗")}</h3>
-          {data?.recorded?<><dl className="usage-totals"><div><dt>{t("已记录总量")}</dt><dd>{number(data.recorded.totalTokens)}</dd></div><div><dt>{t("近 7 个 UTC 日期")}</dt><dd>{number(data.recentSevenDaysTokens??0)}</dd></div><div><dt>{t("输入 token")}</dt><dd>{number(data.recorded.inputTokens)}</dd></div><div><dt>{t("输出 token")}</dt><dd>{number(data.recorded.outputTokens)}</dd></div><div><dt>{t("缓存输入（包含于输入）")}</dt><dd>{number(data.recorded.cachedInputTokens)}</dd></div><div><dt>{t("推理输出（包含于输出）")}</dt><dd>{number(data.recorded.reasoningOutputTokens)}</dd></div></dl>
+          {data?.recorded?<><dl className="usage-totals"><div><dt>{t("已记录总量")}</dt><dd>{number(data.recorded.totalTokens)}</dd></div><div><dt>{t("本轮周额度内已记录")}</dt><dd>{data.quotaCycle?.recordedTokens == null ? "—" : number(data.quotaCycle.recordedTokens)}</dd></div><div><dt>{t("输入 token")}</dt><dd>{number(data.recorded.inputTokens)}</dd></div><div><dt>{t("输出 token")}</dt><dd>{number(data.recorded.outputTokens)}</dd></div><div><dt>{t("缓存输入（包含于输入）")}</dt><dd>{number(data.recorded.cachedInputTokens)}</dd></div><div><dt>{t("推理输出（包含于输出）")}</dt><dd>{number(data.recorded.reasoningOutputTokens)}</dd></div></dl>
           <p>{t("已获取 {0} / {1} 个会话",data.observedSessions,data.totalSessions)}</p><p>{t("开始记录：{0}",data.firstObservedAt?date(data.firstObservedAt):"—")}<br/>{t("最近上报：{0}",data.lastObservedAt?date(data.lastObservedAt):"—")}</p></>:<p>{t("尚无用量数据。升级 Agent 后，新产生的原生用量通知会开始记录；未获取不代表零消耗。")}</p>}
+          {data?.quotaCycle?<p>{t("当前周额度周期：{0} 至 {1}",date(data.quotaCycle.startsAt),date(data.quotaCycle.resetsAt))}{data.quotaCycle.boundaryIncomplete&&<><br/>{t("跨越重置时刻且无法精确拆分的用量未计入本轮。")}</>}</p>:<p>{t("尚未获取有效的下次周额度重置时间，暂不计算本轮用量。")}</p>}
           {!!data?.discontinuities&&<p>{t("检测到计数不连续，缺失区间未估算。")}</p>}
-          <p className="usage-note">{t("仅统计收到的用量通知；接入前历史、独立 CLI 中的请求和未同步内容的会话可能缺失。最近 7 天并非账号额度重置周期。缓存和推理明细不能再次加到总量。")}</p>
+          <p className="usage-note">{t("本轮按下次周额度重置时间倒推 7 天计算，仅包含已记录用量，不等于账号官方额度消耗。缓存和推理明细不能再次加到总量。")}</p>
           {data?.last&&<details><summary>{t("最近请求与原生累计")}</summary><p>{t("最近请求：{0} tokens",number(data.last.totalTokens))}</p><p>{t("原生累计：{0} tokens",number(data.nativeTotal?.totalTokens??0))}</p><p>{t("原生累计可能包含接入前或分支继承的历史，不计入项目已记录总量。")}</p></details>}
         </section>
         {scope==="machine"&&!!data?.topProjects?.length&&<section><h3>{t("消耗最多的项目（前 10）")}</h3><ol className="usage-ranking">{data.topProjects.map(p=><li key={p.id}>{p.title}<strong>{number(p.totalTokens)} tokens</strong></li>)}</ol></section>}

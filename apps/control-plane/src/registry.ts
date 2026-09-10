@@ -2117,7 +2117,7 @@ export class RegistryService {
           const snapshot = nativeUsage as { occurredAt?: unknown; usage?: unknown };
           const observedAt = typeof snapshot.occurredAt === "string" ? Date.parse(snapshot.occurredAt) : NaN;
           const storedEpoch = this.db.get<{ content_epoch: number }>("SELECT content_epoch FROM logical_sessions WHERE logical_session_id=?", logicalSessionId)!.content_epoch;
-          if ((session.contentEpoch ?? 1) === storedEpoch && Number.isFinite(observedAt) && observedAt <= Date.now() + 60_000 && observedAt > Date.now() - policy.retentionDays * 86400_000) {
+          if ((session.contentEpoch ?? 1) === storedEpoch && Number.isFinite(observedAt) && observedAt <= Date.now() + 60_000) {
             new UsageService(this.db).record({ logicalSessionId, nativeThreadId: nativeId, appServerEpoch: hello.appServerEpoch,
               occurredAt: new Date(observedAt).toISOString(), payload: { usage: snapshot.usage, synchronizedFromHost: true } });
           }

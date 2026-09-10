@@ -1343,5 +1343,10 @@
   "发送使用": "Send with",
   "强度未确认": "Effort unconfirmed",
   "未确认": "Unconfirmed",
-  "当前任务显示主机已接受的配置，不代表供应商最终模型确认。": "Current task shows the settings accepted by the host, not confirmation of the provider’s final model."
+  "当前任务显示主机已接受的配置，不代表供应商最终模型确认。": "Current task shows the settings accepted by the host, not confirmation of the provider’s final model.",
+  "本轮周额度内已记录": "Recorded in this weekly quota cycle",
+  "当前周额度周期：{0} 至 {1}": "Current weekly quota cycle: {0} to {1}",
+  "跨越重置时刻且无法精确拆分的用量未计入本轮。": "Usage spanning the reset boundary that cannot be split precisely is excluded.",
+  "尚未获取有效的下次周额度重置时间，暂不计算本轮用量。": "A valid next weekly reset time is unavailable; cycle usage is not calculated.",
+  "本轮按下次周额度重置时间倒推 7 天计算，仅包含已记录用量，不等于账号官方额度消耗。缓存和推理明细不能再次加到总量。": "This cycle starts 7 days before the next weekly reset. It includes recorded usage only, not official account quota consumption. Cached and reasoning tokens must not be added to the total again."
 }

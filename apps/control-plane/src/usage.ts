@@ -41,6 +41,8 @@ export class UsageService {
     this.db.run(`INSERT INTO session_usage(logical_session_id,native_thread_id,epoch,counters_json,last_json,recorded_json,first_at,observed_at,context_window,discontinuities)
       VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(logical_session_id) DO UPDATE SET native_thread_id=excluded.native_thread_id,epoch=excluded.epoch,counters_json=excluded.counters_json,last_json=excluded.last_json,recorded_json=excluded.recorded_json,observed_at=excluded.observed_at,context_window=excluded.context_window,discontinuities=excluded.discontinuities`,
       event.logicalSessionId,event.nativeThreadId,event.appServerEpoch,JSON.stringify(total),JSON.stringify(last),JSON.stringify(recorded),previous?.first_at ?? event.occurredAt,event.occurredAt,context,gaps);
+    if (delta.totalTokens > 0) this.db.run("INSERT INTO usage_intervals(logical_session_id,starts_at,ends_at,total_tokens,precision) VALUES(?,?,?,?, 'observation')",
+      event.logicalSessionId, previous && delta.totalTokens !== last.totalTokens ? previous.observed_at : event.occurredAt, event.occurredAt, delta.totalTokens);
     if (delta.totalTokens > 0) this.db.run(`INSERT INTO usage_days(logical_session_id,day,input_tokens,output_tokens,cached_input_tokens,reasoning_output_tokens,total_tokens)
       VALUES(?,?,?,?,?,?,?) ON CONFLICT(logical_session_id,day) DO UPDATE SET input_tokens=input_tokens+excluded.input_tokens,output_tokens=output_tokens+excluded.output_tokens,cached_input_tokens=cached_input_tokens+excluded.cached_input_tokens,reasoning_output_tokens=reasoning_output_tokens+excluded.reasoning_output_tokens,total_tokens=total_tokens+excluded.total_tokens`,
       event.logicalSessionId,event.occurredAt.slice(0,10),delta.inputTokens,delta.outputTokens,delta.cachedInputTokens,delta.reasoningOutputTokens,delta.totalTokens);
@@ -71,14 +73,26 @@ export class UsageService {
     const quotaRows=this.db.all<{machine_id:string;name:string;account_key:string|null;observed_at:string;windows_json:string}>(`SELECT u.*,m.name FROM machine_usage u JOIN machines m USING(machine_id) WHERE m.workspace_id=? AND m.identity_state='active' ORDER BY u.observed_at DESC`,workspaceId);
     const targetKeys=new Set(quotaRows.filter(r=>machineIds.has(r.machine_id)).map(r=>r.account_key??r.machine_id));
     const seen=new Set<string>();const accounts=quotaRows.flatMap(r=>{const key=r.account_key??r.machine_id;if(!targetKeys.has(key)||seen.has(key))return [];seen.add(key);return [{sourceMachine:r.name,identityKnown:r.account_key!==null,observedAt:r.observed_at,stale:Date.now()-Date.parse(r.observed_at)>180_000,windows:JSON.parse(r.windows_json)}];});
-    const since=new Date(Date.now()-6*86400_000).toISOString().slice(0,10);
-    const recent=this.db.get<{total:number}>(`SELECT COALESCE(SUM(d.total_tokens),0) AS total FROM usage_days d JOIN logical_sessions s USING(logical_session_id) WHERE s.workspace_id=? AND s.${column}=? AND s.deleted_at IS NULL AND d.day>=?`,workspaceId,id,since)!.total;
+    const weekly = accounts.flatMap(account => account.windows.filter((w: { bucket: string; windowMinutes: number; resetsAt: number | null }) =>
+      w.bucket === "codex" && w.windowMinutes === 10080 && w.resetsAt !== null && w.resetsAt * 1000 > Date.now() && w.resetsAt * 1000 - 10080 * 60_000 <= Date.now()));
+    let quotaCycle: { startsAt: string; resetsAt: string; recordedTokens: number | null; boundaryIncomplete: boolean } | null = null;
+    if (weekly.length === 1) {
+      const resetsAt = new Date(weekly[0].resetsAt * 1000).toISOString();
+      const startsAt = new Date(weekly[0].resetsAt * 1000 - weekly[0].windowMinutes * 60_000).toISOString();
+      const period = this.db.get<{ total: number; uncertain: number }>(`SELECT
+        COALESCE(SUM(CASE WHEN d.starts_at>=? AND d.ends_at<? THEN d.total_tokens ELSE 0 END),0) AS total,
+        COALESCE(SUM(CASE WHEN d.starts_at<? OR d.ends_at>=? THEN 1 ELSE 0 END),0) AS uncertain
+        FROM usage_intervals d JOIN logical_sessions s USING(logical_session_id)
+        WHERE s.workspace_id=? AND s.${column}=? AND s.deleted_at IS NULL AND d.ends_at>=? AND d.starts_at<?`,
+        startsAt,resetsAt,startsAt,resetsAt,workspaceId,id,startsAt,resetsAt)!;
+      quotaCycle = { startsAt,resetsAt,recordedTokens:rows.length ? period.total : null,boundaryIncomplete:period.uncertain>0 };
+    }
     const projectTotals=new Map<string,{id:string;title:string;totalTokens:number}>();
     if(scope==="machine") for(const row of rows) {
       const project={id:row.project_id,title:row.project_title};
       const aggregate=projectTotals.get(project.id)??{...project,totalTokens:0};aggregate.totalTokens+=JSON.parse(row.recorded_json).totalTokens;projectTotals.set(project.id,aggregate);
     }
-    return { topProjects:[...projectTotals.values()].sort((a,b)=>b.totalTokens-a.totalTokens).slice(0,10), scope, observedSessions:rows.length,totalSessions:sessions.length,recorded:rows.length?recorded:null,recentSevenDaysTokens:rows.length?recent:null,
+    return { topProjects:[...projectTotals.values()].sort((a,b)=>b.totalTokens-a.totalTokens).slice(0,10), scope, observedSessions:rows.length,totalSessions:sessions.length,recorded:rows.length?recorded:null,quotaCycle,
       firstObservedAt:rows.map(r=>r.first_at).sort()[0]??null,lastObservedAt:rows.map(r=>r.observed_at).sort().at(-1)??null,
       coverage:"observed-only",accounts,discontinuities:rows.reduce((n,r)=>n+r.discontinuities,0),
       last:scope==="session" && rows[0]?JSON.parse(rows[0].last_json):null,nativeTotal:scope==="session" && rows[0]?JSON.parse(rows[0].counters_json):null,
