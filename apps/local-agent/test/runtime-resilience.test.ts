@@ -1482,3 +1482,11 @@ for (const mode of ["skip-existing","legacy-anchor"] as const) test(`paged basel
  const events=store.snapshot().outbox.filter(e=>e.type==="item.completed");
  assert.equal(events.length,mode==="legacy-anchor"?5:1);assert.equal(events.filter(e=>e.nativeItemId==="item-new").length,1);
 });
+
+test("heartbeats relay cached quota without querying Codex; explicit host refresh queries once",async t=>{
+ const {store}=await fixture(0);let reads=0;const snapshot={observedAt:"2026-09-10T00:00:00Z",windows:[]};
+ const runtime=new AgentRuntime({store,identity,pairing,support,appServerFactory:callbacks=>Object.assign(new FakeAppServer("quota-epoch",callbacks),{refreshQuota:async()=>{reads++;},getQuotaSnapshot:()=>snapshot})});
+ t.after(()=>runtime.shutdown());await runtime.initialize();
+ for(let i=0;i<20;i++)assert.equal(runtime.heartbeatPayload().quota,snapshot);
+ assert.equal(reads,0);await runtime.refreshCatalog();assert.equal(reads,1);
+});

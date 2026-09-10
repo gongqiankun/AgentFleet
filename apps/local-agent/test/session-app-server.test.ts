@@ -89,3 +89,18 @@ test("quota telemetry reaches the catalog through the runtime facade without cre
  await f.clients[1]!.callbacks.onEvent({type:"thread.usage",nativeThreadId:"a",payload:{}},f.server.appServerEpoch);assert.equal(f.events.length,1);
  await f.server.unsubscribeThread("a");await f.clients[1]!.callbacks.onEvent({type:"thread.usage",nativeThreadId:"a",payload:{}},f.server.appServerEpoch);assert.equal(f.events.length,1);await f.server.stop();
 });
+
+test("quota events coalesce across writers, idle time does not poll, and released writers cannot refresh",async t=>{
+ t.mock.timers.enable({apis:["setTimeout","Date"]});
+ const settle=()=>new Promise<void>(resolve=>setImmediate(resolve));
+ const f=fixture();await f.server.start();await settle();assert.equal(f.clients[0]!.quotaReads,1);
+ t.mock.timers.tick(120_000);await settle();assert.equal(f.clients[0]!.quotaReads,1,"idle does not query quota");
+ await f.server.resumeThread("a",project);await f.server.resumeThread("b",project);
+ for(let i=0;i<20;i++){f.clients[1]!.callbacks.onQuotaChanged?.();f.clients[2]!.callbacks.onQuotaChanged?.();}
+ t.mock.timers.tick(250);await settle();assert.equal(f.clients[0]!.quotaReads,2);
+ f.clients[1]!.callbacks.onQuotaChanged?.();t.mock.timers.tick(4_999);await settle();assert.equal(f.clients[0]!.quotaReads,2);
+ t.mock.timers.tick(1);await settle();assert.equal(f.clients[0]!.quotaReads,3,"last event is retained during cooldown");
+ await f.server.unsubscribeThread("a");f.clients[1]!.callbacks.onQuotaChanged?.();t.mock.timers.tick(120_000);await settle();assert.equal(f.clients[0]!.quotaReads,3);
+ await f.server.refreshQuota();assert.equal(f.clients[0]!.quotaReads,4,"explicit refresh remains available");
+ f.clients[2]!.callbacks.onQuotaChanged?.();await f.server.stop();t.mock.timers.tick(120_000);await settle();assert.equal(f.clients[0]!.quotaReads,4);
+});

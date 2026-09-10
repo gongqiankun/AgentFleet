@@ -20,9 +20,13 @@ export class SessionAppServer implements AppServerClient {
   private readonly lanes = new Map<string, Promise<unknown>>();
   private readonly approvals = new Map<string, { writer: Writer; original: ApprovalRecord }>();
   private stopped = false;
+  private quotaTimer: ReturnType<typeof setTimeout> | undefined;
+  private quotaRead: Promise<void> | undefined;
+  private quotaAttempt = 0;
 
   constructor(private readonly callbacks: AppServerCallbacks, private readonly factory: Factory = (cb, epoch) => new CodexAppServer(cb, epoch)) {
     this.catalog = factory({ ...callbacks,
+      onQuotaChanged: () => this.queueQuotaRefresh(),
       findManagedThread: () => undefined,
       onEvent: async () => undefined, onVolatile: () => undefined,
       onApproval: async () => { throw new AgentError("THREAD_READ_ONLY", "Catalog cannot approve execution"); },
@@ -35,14 +39,32 @@ export class SessionAppServer implements AppServerClient {
     }, this.appServerEpoch);
   }
 
-  start() { return this.catalog.start(); }
+  async start() { await this.catalog.start(); void this.refreshQuota(); }
   async stop() {
     this.stopped = true;
+    if (this.quotaTimer) clearTimeout(this.quotaTimer);
+    this.quotaTimer = undefined;
     for (const writer of this.allWriters) writer.live = false;
     await Promise.all([this.catalog.stop(), ...[...this.allWriters].map(w => w.client.stop())]);
     this.writers.clear(); this.allWriters.clear(); this.approvals.clear();
   }
-  async refreshQuota() { await this.catalog.refreshQuota?.(); }
+  // Events schedule a bounded trailing refresh. No timer runs when usage is idle.
+  private queueQuotaRefresh() {
+    if (this.stopped || this.quotaTimer) return;
+    this.quotaTimer = setTimeout(() => {
+      this.quotaTimer = undefined;
+      const pending = this.quotaRead;
+      void (async () => { await pending; if (!this.stopped) await this.refreshQuota(); })();
+    }, Math.max(250, this.quotaAttempt + 5_000 - Date.now()));
+    this.quotaTimer.unref();
+  }
+  async refreshQuota() {
+    if (this.stopped) return;
+    if (this.quotaRead) return this.quotaRead;
+    this.quotaAttempt = Date.now();
+    this.quotaRead = Promise.resolve().then(() => this.catalog.refreshQuota?.()).catch(() => undefined).finally(() => { this.quotaRead = undefined; });
+    return this.quotaRead;
+  }
   getQuotaSnapshot() { return this.catalog.getQuotaSnapshot?.(); }
   getCodexCatalog() { return this.catalog.getCodexCatalog!(); }
   listThreads() { return this.catalog.listThreads(); }
@@ -76,6 +98,7 @@ export class SessionAppServer implements AppServerClient {
       findProject: id => this.callbacks.findProject(id),
       onEvent: async (event, epoch) => { if (current() && event.nativeThreadId === writer.threadId) await this.callbacks.onEvent(event, epoch); },
       onVolatile: (event, epoch) => { if (current() && event.nativeThreadId === writer.threadId) this.callbacks.onVolatile(event, epoch); },
+      onQuotaChanged: () => { if (current()) this.queueQuotaRefresh(); },
       onCatalogChanged: epoch => { if (current()) this.callbacks.onCatalogChanged?.(epoch); },
       onApproval: async approval => {
         if (!current() || approval.nativeThreadId !== writer.threadId) throw new AgentError("APPROVAL_PRECONDITION_FAILED", "Stale writer approval");

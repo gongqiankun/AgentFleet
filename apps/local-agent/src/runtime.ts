@@ -302,6 +302,7 @@ export class AgentRuntime {
   }
 
   async refreshCatalog(): Promise<Record<string, unknown>> {
+    void this.appServer?.refreshQuota?.();
     if (!this.canRead()) throw new AgentError("CATALOG_READ_UNSUPPORTED", this.support.readCompatibilityReason ?? this.readOnlyReasons().join("; "));
     await this.reconcileExistingThreads();
     if (this.discoveryStatus.state === "error") throw new AgentError("CATALOG_REFRESH_FAILED", this.discoveryStatus.error ?? "catalog refresh failed");
@@ -511,7 +512,6 @@ export class AgentRuntime {
   }
 
   heartbeatPayload(): Record<string, unknown> {
-    if (!this.shuttingDown) void this.appServer?.refreshQuota?.();
     if (!this.shuttingDown) void this.refreshHostCodex().catch(() => undefined);
     const state = this.store.snapshot();
     return {

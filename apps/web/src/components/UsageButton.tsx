@@ -5,15 +5,22 @@ import type { UsageSummary } from "../lib/usage";
 import { locale, t } from "../i18n";
 export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"machine";id:string;onSession?:(id:string)=>void}) {
   const [data,setData]=useState<UsageSummary>();const [failed,setFailed]=useState(false);const [open,setOpen]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);const [refreshNotice,setRefreshNotice]=useState("");
   const dialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{
-    setData(undefined);setFailed(false);setOpen(false);
+    setData(undefined);setFailed(false);setOpen(false);setRefreshNotice("");
     const controller=new AbortController();let busy=false;
     const update=async()=>{if(busy||controller.signal.aborted)return;busy=true;try{const next=await api.usage(scope,id,controller.signal);if(!next || next.coverage!=="observed-only" || !Array.isArray(next.accounts) || !Array.isArray(next.topSessions))throw new Error("Invalid usage response");if(!controller.signal.aborted){setData(next);setFailed(false);}}catch{if(!controller.signal.aborted)setFailed(true);}finally{busy=false;}};
     void update();const timer=window.setInterval(()=>{if(!document.hidden)void update();},30_000);
     return ()=>{controller.abort();window.clearInterval(timer);};
   },[scope,id]);
   useEffect(()=>{const element=dialog.current;if(open&&!element?.open)element?.showModal?.();else if(!open&&element?.open)element.close();},[open]);
+  async function refreshHost() {
+    setRefreshing(true);setRefreshNotice("");
+    try { await api.hostOperation(id,"catalog.refresh",crypto.randomUUID());setRefreshNotice(t("已请求主机刷新，结果以更新时间为准。")); }
+    catch { setRefreshNotice(t("暂时无法请求刷新，请确认主机在线且没有其他维护操作。")); }
+    finally { setRefreshing(false); }
+  }
   const number=(n:number)=>new Intl.NumberFormat(locale(),{maximumFractionDigits:0}).format(n);
   const short=(n:number)=>new Intl.NumberFormat(locale(),{notation:"compact",maximumFractionDigits:1}).format(n);
   const date=(s:string)=>new Date(s).toLocaleString(locale());
@@ -26,6 +33,8 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
       <div className="usage-body">
         {failed&&<p role="status">{t("用量读取失败，已有数据可能过期。")}</p>}
         <section><h3>{t("账号额度（共享）")}</h3>
+          {scope==="machine"&&<button type="button" className="button button--quiet" disabled={refreshing} onClick={()=>void refreshHost()}>{t("刷新主机信息与额度")}</button>}
+          {refreshNotice&&<p role="status">{refreshNotice}</p>}
           {!data?.accounts.length&&<p>{t("账号额度未上报；需要支持额度查询的 Codex 认证。")}</p>}
           {data?.accounts.map((account,i)=><div className="usage-account" key={i}>
             <p>{account.sourceMachine} · {t("更新于 {0}",date(account.observedAt))}{(account.stale||Date.now()-Date.parse(account.observedAt)>180_000)&&<strong> · {t("数据已过期")}</strong>}</p>

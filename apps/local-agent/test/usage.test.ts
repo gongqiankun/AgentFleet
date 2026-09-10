@@ -21,15 +21,15 @@ test("native usage notifications use durable events and never request a turn or 
  await notify("thread/tokenUsage/updated",{threadId:"native",turnId:"turn",tokenUsage:{total:{},last:{}}});assert.equal(events.length,1);
  await client.refreshQuota();assert.equal(client.getQuotaSnapshot(),undefined);
 });
-test("quota reads are throttled, failures retain timestamps, and account changes invalidate cached quota",async()=>{
+test("concurrent quota reads are coalesced, failures retain timestamps, and account changes invalidate cached quota",async()=>{
  const callbacks: AppServerCallbacks = {onEvent:async()=>{},findManagedThread:()=>undefined,findProject:()=>undefined,onVolatile:()=>{},onApproval:async()=>{throw new Error("unexpected approval");},onApprovalResolved:async()=>{},onExit:async()=>{}};
  const client=new CodexAppServer(callbacks);
- const internal=client as unknown as {initialized:boolean;quotaAttempt:number;request(method:string,params:unknown):Promise<unknown>;handleNotification(method:string,params:Record<string,unknown>):Promise<void>};
+ const internal=client as unknown as {initialized:boolean;request(method:string,params:unknown):Promise<unknown>;handleNotification(method:string,params:Record<string,unknown>):Promise<void>};
  internal.initialized=true;const methods:string[]=[];
  internal.request=async method=>{methods.push(method);return method==="account/read"?{account:{email:"test@example.test"}}:{accountId:"test-account",rateLimits:{secondary:{usedPercent:25,windowDurationMins:10080}}};};
- await client.refreshQuota();const snapshot=client.getQuotaSnapshot();assert.ok(snapshot);
- await client.refreshQuota();assert.deepEqual(methods,["account/read","account/rateLimits/read"]);
- internal.quotaAttempt=0;internal.request=async()=>{throw new Error("offline");};await client.refreshQuota();assert.equal(client.getQuotaSnapshot(),snapshot);
+ await Promise.all([client.refreshQuota(),client.refreshQuota()]);const snapshot=client.getQuotaSnapshot();assert.ok(snapshot);
+ assert.deepEqual(methods,["account/read","account/rateLimits/read"]);
+ internal.request=async()=>{throw new Error("offline");};await client.refreshQuota();assert.equal(client.getQuotaSnapshot(),snapshot);
  await internal.handleNotification("account/updated",{});assert.equal(client.getQuotaSnapshot(),undefined);
  const limits={accountId:"shared-workspace",rateLimits:{}};
  assert.notEqual(quotaSnapshot(limits,{account:{email:"one@example.test"}})?.accountKey,quotaSnapshot(limits,{account:{email:"two@example.test"}})?.accountKey);

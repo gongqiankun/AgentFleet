@@ -100,6 +100,7 @@ export interface AppServerCallbacks {
   onExit(appServerEpoch: string, detail: string): Promise<void>;
   onThreadExit?(threadId: string, appServerEpoch: string, detail: string): Promise<void>;
   onCatalogChanged?(appServerEpoch: string): void;
+  onQuotaChanged?(): void;
 }
 
 export interface ThreadStartResult {
@@ -391,12 +392,11 @@ export class CodexAppServer implements AppServerClient {
 
   private quota: Record<string, unknown> | undefined;
   private quotaPending = false;
-  private quotaAttempt = 0;
   private quotaGeneration = 0;
   getQuotaSnapshot(): Record<string, unknown> | undefined { return this.quota; }
   async refreshQuota(): Promise<void> {
-    if (!this.initialized || this.quotaPending || Date.now() - this.quotaAttempt < 60_000) return;
-    this.quotaPending = true; this.quotaAttempt = Date.now();
+    if (!this.initialized || this.quotaPending) return;
+    this.quotaPending = true;
     const generation = this.quotaGeneration;
     try {
       const identity = await this.request("account/read", { refreshToken: false });
@@ -1248,8 +1248,8 @@ export class CodexAppServer implements AppServerClient {
       return;
     }
 
-    if (method === "account/updated") { this.quota = undefined; this.quotaGeneration++; this.quotaAttempt = 0; return; }
-    if (method === "account/rateLimits/updated") { void this.refreshQuota(); return; }
+    if (method === "account/updated") { this.quota = undefined; this.quotaGeneration++; this.callbacks.onQuotaChanged?.(); return; }
+    if (method === "account/rateLimits/updated") { this.callbacks.onQuotaChanged?.(); return; }
     let event: AppEvent | null = null;
     if (method === "thread/tokenUsage/updated" && typeof params.threadId === "string" && typeof params.turnId === "string") {
       const usage = tokenUsage(params.tokenUsage);

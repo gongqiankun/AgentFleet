@@ -1307,5 +1307,8 @@
   "原生累计：{0} tokens": "Native cumulative: {0} tokens",
   "原生累计可能包含接入前或分支继承的历史，不计入项目已记录总量。": "Native cumulative usage may include earlier or fork-inherited history. It is not added to the project’s recorded total.",
   "消耗最多的会话（前 10）": "Top 10 sessions by usage",
-  "消耗最多的项目（前 10）": "Top 10 projects by usage"
+  "消耗最多的项目（前 10）": "Top 10 projects by usage",
+  "刷新主机信息与额度": "Refresh host information and quota",
+  "已请求主机刷新，结果以更新时间为准。": "Host refresh requested. Check the updated timestamp for new data.",
+  "暂时无法请求刷新，请确认主机在线且没有其他维护操作。": "Unable to request a refresh. Check that the host is online and has no other maintenance in progress."
 }
