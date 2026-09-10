@@ -76,6 +76,7 @@ export class UsageService {
     const weekly = accounts.flatMap(account => account.windows.filter((w: { bucket: string; windowMinutes: number; resetsAt: number | null }) =>
       w.bucket === "codex" && w.windowMinutes === 10080 && w.resetsAt !== null && w.resetsAt * 1000 > Date.now() && w.resetsAt * 1000 - 10080 * 60_000 <= Date.now()));
     let quotaCycle: { startsAt: string; resetsAt: string; recordedTokens: number | null; boundaryIncomplete: boolean } | null = null;
+    let weeklySessions: {id:string;title:string;projectId:string;projectTitle:string;totalTokens:number}[] = [];
     if (weekly.length === 1) {
       const resetsAt = new Date(weekly[0].resetsAt * 1000).toISOString();
       const startsAt = new Date(weekly[0].resetsAt * 1000 - weekly[0].windowMinutes * 60_000).toISOString();
@@ -86,13 +87,24 @@ export class UsageService {
         WHERE s.workspace_id=? AND s.${column}=? AND s.deleted_at IS NULL AND d.ends_at>=? AND d.starts_at<?`,
         startsAt,resetsAt,startsAt,resetsAt,workspaceId,id,startsAt,resetsAt)!;
       quotaCycle = { startsAt,resetsAt,recordedTokens:rows.length ? period.total : null,boundaryIncomplete:period.uncertain>0 };
+      weeklySessions = this.db.all<{id:string;title:string;projectId:string;projectTitle:string;totalTokens:number}>(`SELECT s.logical_session_id AS id,s.title,s.project_id AS projectId,p.alias AS projectTitle,SUM(d.total_tokens) AS totalTokens
+        FROM usage_intervals d JOIN logical_sessions s USING(logical_session_id) JOIN projects p ON p.project_id=s.project_id
+        WHERE s.workspace_id=? AND s.${column}=? AND s.deleted_at IS NULL AND d.starts_at>=? AND d.ends_at<?
+        GROUP BY s.logical_session_id HAVING SUM(d.total_tokens)>0 ORDER BY totalTokens DESC,s.logical_session_id`,workspaceId,id,startsAt,resetsAt);
+
     }
     const projectTotals=new Map<string,{id:string;title:string;totalTokens:number}>();
     if(scope==="machine") for(const row of rows) {
       const project={id:row.project_id,title:row.project_title};
       const aggregate=projectTotals.get(project.id)??{...project,totalTokens:0};aggregate.totalTokens+=JSON.parse(row.recorded_json).totalTokens;projectTotals.set(project.id,aggregate);
     }
-    return { topProjects:[...projectTotals.values()].sort((a,b)=>b.totalTokens-a.totalTokens).slice(0,10), scope, observedSessions:rows.length,totalSessions:sessions.length,recorded:rows.length?recorded:null,quotaCycle,
+    const weeklyProjects=new Map<string,{id:string;title:string;totalTokens:number}>();
+    if(scope==="machine") for(const row of weeklySessions) {
+      const aggregate=weeklyProjects.get(row.projectId)??{id:row.projectId,title:row.projectTitle,totalTokens:0};
+      aggregate.totalTokens+=row.totalTokens;weeklyProjects.set(row.projectId,aggregate);
+    }
+    return { topWeeklyProjects:quotaCycle?[...weeklyProjects.values()].sort((a,b)=>b.totalTokens-a.totalTokens).slice(0,10):null,
+      topWeeklySessions:quotaCycle?weeklySessions.slice(0,10).map(({id,title,totalTokens})=>({id,title,totalTokens})):null, topProjects:[...projectTotals.values()].sort((a,b)=>b.totalTokens-a.totalTokens).slice(0,10), scope, observedSessions:rows.length,totalSessions:sessions.length,recorded:rows.length?recorded:null,quotaCycle,
       firstObservedAt:rows.map(r=>r.first_at).sort()[0]??null,lastObservedAt:rows.map(r=>r.observed_at).sort().at(-1)??null,
       coverage:"observed-only",accounts,discontinuities:rows.reduce((n,r)=>n+r.discontinuities,0),
       last:scope==="session" && rows[0]?JSON.parse(rows[0].last_json):null,nativeTotal:scope==="session" && rows[0]?JSON.parse(rows[0].counters_json):null,

@@ -16,3 +16,7 @@ reset. It is separate from the cumulative recorded total and message retention.
 If a valid reset time is unavailable, the cycle total is not calculated.
 Historical usage that cannot be assigned precisely across a reset boundary is
 identified as incomplete rather than estimated.
+
+Projects and sessions show cumulative and current weekly-cycle token usage side
+by side. Usage details include separate total and weekly rankings. The host
+summary also shows remaining five-hour quota when Codex reports that limit.

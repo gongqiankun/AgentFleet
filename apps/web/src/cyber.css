@@ -228,7 +228,7 @@ html[lang="en"] .session-config-trigger { white-space:nowrap; }
     .inspector-head__actions > .icon-button:not(.inspector-close) { right: 46px; }
   }
 }
-.inspector .session-facts > .usage-trigger { min-height: 28px; height: 28px; box-sizing: border-box; padding: 5px 8px; font-size: 11px; line-height: 16px; gap: 5px; white-space: nowrap; }
+.inspector .session-facts > .usage-trigger { min-height: 28px; height: auto; box-sizing: border-box; padding: 5px 8px; font-size: 11px; line-height: 16px; gap: 5px; white-space: nowrap; }
 
 .runtime-settings-shortcut { display: flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; min-height: 24px; padding: 3px 2px; margin-bottom: 4px; border: 0; background: transparent; color: var(--muted); font-size: 11px; line-height: 18px; cursor: pointer; }
 .runtime-settings-shortcut > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

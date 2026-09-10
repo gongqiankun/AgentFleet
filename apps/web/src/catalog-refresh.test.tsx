@@ -95,8 +95,8 @@ it("会话行在历史标记右侧展示独立 token 数，并区分零和未记
   await screen.findByText("会话 used");
   const labels=container.querySelectorAll(".session-row__tokens");
   expect(labels).toHaveLength(3);
-  expect(labels[0].getAttribute("title")).toBe("已记录 1,200 tokens");
+  expect(labels[0].getAttribute("title")).toBe("总消耗 1,200 tokens · 本周消耗 — tokens");
   expect(labels[0].previousElementSibling?.className).toBe("history-mark");
-  expect(labels[1].textContent).toBe("已记录 0 tokens");
-  expect(labels[2].textContent).toBe("未记录");
+  expect(labels[1].textContent).toBe("总消耗 0 tokens · 本周消耗 — tokens");
+  expect(labels[2].textContent).toBe("总消耗 — tokens · 本周消耗 — tokens");
 });

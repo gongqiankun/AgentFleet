@@ -27,11 +27,13 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
   const short=(n:number)=>new Intl.NumberFormat(locale(),{notation:"compact",maximumFractionDigits:1}).format(n);
   const date=(s:string)=>new Date(s).toLocaleString(locale());
   const weekly=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===10080 && w.bucket==="codex").map(w=>({w,a})))??[];
-  const label=scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):scope==="machine"&&!!data?.accounts.some(a=>a.windows.length)?t("用量与剩余额度"):data?.recorded?t("已记录 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
+  const fiveHour=data?.accounts.flatMap(a=>a.windows.filter(w=>w.windowMinutes===300&&w.bucket==="codex"))??[];
+  const label=scope!=="machine"?t("总消耗 {0} tokens",data?.recorded?short(data.recorded.totalTokens):"—"):scope==="machine"&&weekly.length===1?t("周额度剩余 {0}%",weekly[0].w.remainingPercent):scope==="machine"&&!!data?.accounts.some(a=>a.windows.length)?t("用量与剩余额度"):data?.recorded?t("总消耗 {0} tokens",short(data.recorded.totalTokens)):t("用量未上报");
   const showWeeklyReset=scope==="machine"&&weekly.length===1&&!failed;
   const resetAt=showWeeklyReset?weekly[0].w.resetsAt:null;
+  const periodTokens=data?.quotaCycle?.recordedTokens;
   return <>
-    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/><span className="usage-trigger-text"><span>{failed?t("用量暂不可用"):label}</span>{showWeeklyReset&&<small>{resetAt?t("下次重置：{0}",date(new Date(resetAt*1000).toISOString())):t("重置时间未上报")}</small>}</span></button>
+    <button type="button" className="button button--quiet usage-trigger" onClick={()=>{setOpen(true);refreshUsage.current();}} aria-haspopup="dialog" title={t("查看用量与剩余额度")}><BarChart3 size={14}/><span className="usage-trigger-text"><span>{failed?t("用量暂不可用"):label}</span>{showWeeklyReset&&<small>{resetAt?t("下次重置：{0}",date(new Date(resetAt*1000).toISOString())):t("重置时间未上报")}</small>}{scope!=="machine"&&!failed&&<small>{t("本周消耗 {0} tokens",periodTokens==null?"—":short(periodTokens))}{data?.quotaCycle?.boundaryIncomplete?" *":""}</small>}{scope==="machine"&&!failed&&fiveHour.length===1&&<><span>{t("5 小时额度剩余 {0}%",fiveHour[0].remainingPercent)}</span><small>{fiveHour[0].resetsAt?t("下次重置：{0}",date(new Date(fiveHour[0].resetsAt*1000).toISOString())):t("重置时间未上报")}</small></>}</span></button>
     <dialog ref={dialog} className="modal usage-dialog" aria-label={t("用量与剩余额度")} onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}>
       <header className="modal-head"><div><h2>{t("用量与剩余额度")}</h2><p>{t("账号看额度，项目和会话看已记录 token")}</p></div><button type="button" className="icon-button" aria-label={t("关闭用量")} onClick={()=>setOpen(false)}><X size={18}/></button></header>
       <div className="usage-body">
@@ -56,8 +58,10 @@ export function UsageButton({scope,id,onSession}:{scope:"session"|"project"|"mac
           <p className="usage-note">{t("本轮按下次周额度重置时间倒推 7 天计算，仅包含已记录用量，不等于账号官方额度消耗。缓存和推理明细不能再次加到总量。")}</p>
           {data?.last&&<details><summary>{t("最近请求与原生累计")}</summary><p>{t("最近请求：{0} tokens",number(data.last.totalTokens))}</p><p>{t("原生累计：{0} tokens",number(data.nativeTotal?.totalTokens??0))}</p><p>{t("原生累计可能包含接入前或分支继承的历史，不计入项目已记录总量。")}</p></details>}
         </section>
-        {scope==="machine"&&!!data?.topProjects?.length&&<section><h3>{t("消耗最多的项目（前 10）")}</h3><ol className="usage-ranking">{data.topProjects.map(p=><li key={p.id}>{p.title}<strong>{number(p.totalTokens)} tokens</strong></li>)}</ol></section>}
-        {scope!=="session"&&!!data?.topSessions.length&&<section><h3>{t("消耗最多的会话（前 10）")}</h3><ol className="usage-ranking">{data.topSessions.map(s=><li key={s.id}>{onSession?<button type="button" onClick={()=>{setOpen(false);onSession(s.id);}}>{s.title}</button>:<a href={`/sessions/${encodeURIComponent(s.id)}`}>{s.title}</a>}<strong>{number(s.totalTokens)} tokens</strong></li>)}</ol></section>}
+        {scope==="machine"&&!!data?.topProjects?.length&&<section><h3>{t("项目总消耗排名（前 10）")}</h3><ol className="usage-ranking">{data.topProjects.map(p=><li key={p.id}>{p.title}<strong>{number(p.totalTokens)} tokens</strong></li>)}</ol></section>}
+        {scope==="machine"&&<section><h3>{t("项目本周消耗排名（前 10）")}</h3>{data?.topWeeklyProjects?.length?<ol className="usage-ranking">{data.topWeeklyProjects.map(p=><li key={p.id}>{p.title}<strong>{number(p.totalTokens)} tokens</strong></li>)}</ol>:<p>{data?.quotaCycle?t("本轮暂无已记录消耗。"):t("重置时间未知，暂不计算本周排名。")}</p>}</section>}
+        {scope!=="session"&&!!data?.topSessions.length&&<section><h3>{t("会话总消耗排名（前 10）")}</h3><ol className="usage-ranking">{data.topSessions.map(s=><li key={s.id}>{onSession?<button type="button" onClick={()=>{setOpen(false);onSession(s.id);}}>{s.title}</button>:<a href={`/sessions/${encodeURIComponent(s.id)}`}>{s.title}</a>}<strong>{number(s.totalTokens)} tokens</strong></li>)}</ol></section>}
+        {scope!=="session"&&<section><h3>{t("会话本周消耗排名（前 10）")}</h3>{data?.topWeeklySessions?.length?<ol className="usage-ranking">{data.topWeeklySessions.map(s=><li key={s.id}>{onSession?<button type="button" onClick={()=>{setOpen(false);onSession(s.id);}}>{s.title}</button>:<a href={`/sessions/${encodeURIComponent(s.id)}`}>{s.title}</a>}<strong>{number(s.totalTokens)} tokens</strong></li>)}</ol>:<p>{data?.quotaCycle?t("本轮暂无已记录消耗。"):t("重置时间未知，暂不计算本周排名。")}</p>}</section>}
       </div>
     </dialog>
   </>;

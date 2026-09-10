@@ -1,4 +1,14 @@
 {
+  "总消耗 {0} tokens": "Total usage: {0} tokens",
+  "本周消耗 {0} tokens": "This cycle: {0} tokens",
+  "5 小时额度剩余 {0}%": "5-hour quota: {0}% remaining",
+  "项目总消耗排名（前 10）": "Projects by total usage (top 10)",
+  "项目本周消耗排名（前 10）": "Projects by weekly cycle usage (top 10)",
+  "会话总消耗排名（前 10）": "Sessions by total usage (top 10)",
+  "会话本周消耗排名（前 10）": "Sessions by weekly cycle usage (top 10)",
+  "本轮暂无已记录消耗。": "No recorded usage in this cycle.",
+  "重置时间未知，暂不计算本周排名。": "Weekly rankings are unavailable until the reset time is known.",
+
   "从未连接": "Never connected",
   "未上报": "Not reported",
   "尚未发布": "Not published yet",

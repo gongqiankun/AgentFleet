@@ -2800,7 +2800,10 @@ export class RegistryService {
       principal.workspaceId,
     );
     invariant(row, 404, "SESSION_NOT_FOUND", "Logical Session was not found");
+    const usageCycle = new UsageService(this.db).read(principal.workspaceId,"session",logicalSessionId).quotaCycle;
     return {
+      weeklyTokens: usageCycle?.recordedTokens ?? null,
+      weeklyBoundaryIncomplete: usageCycle?.boundaryIncomplete ?? false,
       logicalSessionId: row.logical_session_id,
       recordedTokens: row.recorded_tokens,
       machineId: row.machine_id,

@@ -250,6 +250,8 @@ function mapSession(
       : "metadata_only";
 
   return {
+    weeklyTokens: typeof raw.weeklyTokens === "number" && Number.isSafeInteger(raw.weeklyTokens) && raw.weeklyTokens >= 0 ? raw.weeklyTokens : null,
+    weeklyBoundaryIncomplete: raw.weeklyBoundaryIncomplete === true,
     recordedTokens: typeof raw.recordedTokens === "number" && Number.isSafeInteger(raw.recordedTokens) && raw.recordedTokens >= 0 ? raw.recordedTokens : null,
     id: string(raw.logicalSessionId),
     runtimeSettings: raw.runtimeSettings as FleetSession["runtimeSettings"],

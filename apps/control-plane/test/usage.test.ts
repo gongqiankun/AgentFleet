@@ -173,3 +173,29 @@ test("v26 daily totals survive migration without inventing intraday timing", t =
  const next=new ControlPlaneDatabase(path);t.after(()=>next.close());assert.deepEqual(next.all("SELECT * FROM usage_days"),before);
  assert.equal(next.get<{n:number}>("SELECT COUNT(*) AS n FROM usage_intervals WHERE precision='day'")?.n,2);
 });
+
+test("total and weekly rankings differ, exclude old usage, and follow reset adjustments", t => {
+ const {db,workspaceId,service}=fixture();t.after(()=>db.close());
+ const now=Math.floor(Date.now()/1000)*1000, reset=now+2*86400_000, start=reset-7*86400_000;
+ const at=(n:number)=>new Date(n).toISOString();
+ // Two projects on one host; a large old session wins total but not the current cycle.
+ db.run("UPDATE projects SET machine_id='a' WHERE project_id='p-b'");
+ db.run("UPDATE logical_sessions SET machine_id='a' WHERE project_id='p-b'");
+ service.record({...event("a1",100,100),occurredAt:at(start-1000)});
+ service.record({...event("a2",2,2),occurredAt:at(now)});
+ service.record({...event("b1",5,5),occurredAt:at(now)});
+ const quota=(end:number)=>service.quota("a",{observedAt:at(now),windows:[{bucket:"codex",window:"secondary",windowMinutes:10080,usedPercent:10,resetsAt:end/1000}]});
+ quota(reset);
+ const host=service.read(workspaceId,"machine","a");
+ assert.deepEqual(host.topProjects.map(p=>[p.id,p.totalTokens]),[["p-a",1020],["p-b",50]]);
+ assert.deepEqual(host.topWeeklyProjects?.map(p=>[p.id,p.totalTokens]),[["p-b",50],["p-a",20]]);
+ assert.deepEqual(host.topWeeklySessions?.map(s=>s.id),["b1","a2"]);
+ assert.equal(host.quotaCycle?.recordedTokens,70);
+ assert.equal(service.read(workspaceId,"session","a1").quotaCycle?.recordedTokens,0);
+ assert.equal(service.read(workspaceId,"session","b2").quotaCycle?.recordedTokens,null);
+ assert.deepEqual(service.read(workspaceId,"project","p-a").topWeeklySessions?.map(s=>s.id),["a2"]);
+ quota(reset-86400_000);
+ assert.equal(service.read(workspaceId,"machine","a").topWeeklyProjects?.[0]?.totalTokens,1020);
+ service.quota("a",null);
+ assert.equal(service.read(workspaceId,"machine","a").topWeeklyProjects,null);
+});

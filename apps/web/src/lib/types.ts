@@ -114,6 +114,8 @@ export interface SessionState {
 
 export interface FleetSession {
   recordedTokens?: number | null;
+  weeklyTokens?: number | null;
+  weeklyBoundaryIncomplete?: boolean;
   imageInputSupported?: boolean;
   cloudImageRevision?: number;
   runtimeSettings?: import("./codex-settings").RuntimeSettings | null;
