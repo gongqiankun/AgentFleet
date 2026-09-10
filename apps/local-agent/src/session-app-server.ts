@@ -42,6 +42,8 @@ export class SessionAppServer implements AppServerClient {
     await Promise.all([this.catalog.stop(), ...[...this.allWriters].map(w => w.client.stop())]);
     this.writers.clear(); this.allWriters.clear(); this.approvals.clear();
   }
+  async refreshQuota() { await this.catalog.refreshQuota?.(); }
+  getQuotaSnapshot() { return this.catalog.getQuotaSnapshot?.(); }
   getCodexCatalog() { return this.catalog.getCodexCatalog!(); }
   listThreads() { return this.catalog.listThreads(); }
   listThreadPage(cursor: string | null, options?: { useStateDbOnly: boolean }) { return this.catalog.listThreadPage!(cursor, options); }

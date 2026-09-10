@@ -1,6 +1,6 @@
 # Usage and remaining quota / 用量与剩余额度
 
-Agent 0.30.0 adds read-only account quota snapshots and persisted token counters. Open the usage button on a host, project, or session. Account snapshots refresh at most once per minute; visible page summaries refresh every 30 seconds. No model request, session resume, or writer takeover is performed to collect quota.
+Agent 0.30.1 adds read-only account quota snapshots and persisted token counters. Open the usage button on a host, project, or session. Account snapshots refresh at most once per minute; visible page summaries refresh every 30 seconds. No model request, session resume, or writer takeover is performed to collect quota.
 
 | Figure | Meaning |
 | --- | --- |

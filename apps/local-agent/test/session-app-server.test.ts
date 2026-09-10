@@ -5,7 +5,7 @@ import type { AppServerCallbacks, AppServerClient } from "../src/app-server.js";
 import type { ApprovalRecord, ManagedThread, ProjectRecord } from "../src/types.js";
 
 function fixture() {
-  const clients: { callbacks: AppServerCallbacks; stopped: number; released: number; failRelease: boolean; resumes: number; answers: unknown[] }[] = [];
+  const clients: { callbacks: AppServerCallbacks; stopped: number; released: number; failRelease: boolean; resumes: number; quotaReads: number; answers: unknown[] }[] = [];
   const approvals: ApprovalRecord[] = []; const events: unknown[] = []; const exits: string[] = [];
   const callbacks: AppServerCallbacks = {
     findManagedThread: id => ({ nativeThreadId: id } as ManagedThread), findProject: () => undefined,
@@ -14,9 +14,10 @@ function fixture() {
     onExit: async () => { exits.push("global"); }, onThreadExit: async id => { exits.push(id); },
   };
   const server = new SessionAppServer(callbacks, (cb, epoch) => {
-    const c = { callbacks: cb, stopped: 0, released: 0, failRelease: false, resumes: 0, answers: [] as unknown[] };
+    const c = { callbacks: cb, stopped: 0, released: 0, failRelease: false, resumes: 0, quotaReads: 0, answers: [] as unknown[] };
     clients.push(c);
     return { appServerEpoch: epoch, start: async () => undefined, stop: async () => { c.stopped++; },
+      refreshQuota: async () => { c.quotaReads++; }, getQuotaSnapshot: () => ({observedAt:"2026-09-10T00:00:00Z",windows:[]}),
       releaseWriter: async () => { if (c.failRelease) throw new Error("still active"); c.released++; },
       resumeThread: async (id: string) => { c.resumes++; return { nativeThreadId: id }; },
       createThread: async () => ({ nativeThreadId: `created-${clients.length}` }),
@@ -78,4 +79,13 @@ test("one writer crash only reports that thread and leaves the other writer usab
   assert.deepEqual(f.exits, ["a"]); assert.equal(f.clients[2]!.stopped, 0);
   await f.server.startTurn({ nativeThreadId: "b" } as ManagedThread, project, "fixture");
   await f.server.stop();
+});
+
+test("quota telemetry reaches the catalog through the runtime facade without creating session writers",async()=>{
+ const f=fixture();await f.server.start();await f.server.refreshQuota();
+ assert.equal(f.clients.length,1);assert.equal(f.clients[0]!.quotaReads,1);assert.equal(f.clients[0]!.resumes,0);
+ assert.deepEqual(f.server.getQuotaSnapshot(),{observedAt:"2026-09-10T00:00:00Z",windows:[]});
+ await f.server.resumeThread("a",project);await f.server.refreshQuota();assert.equal(f.clients[0]!.quotaReads,2);assert.equal(f.clients[1]!.quotaReads,0);
+ await f.clients[1]!.callbacks.onEvent({type:"thread.usage",nativeThreadId:"a",payload:{}},f.server.appServerEpoch);assert.equal(f.events.length,1);
+ await f.server.unsubscribeThread("a");await f.clients[1]!.callbacks.onEvent({type:"thread.usage",nativeThreadId:"a",payload:{}},f.server.appServerEpoch);assert.equal(f.events.length,1);await f.server.stop();
 });

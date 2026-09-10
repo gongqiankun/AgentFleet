@@ -80,7 +80,7 @@ Together with direct access to running and completed-but-controlled sessions, na
 
 Open usage from a host, project, or session to see the account's reported **used and remaining quota**, reset times, and recorded **token consumption**. Host details rank the busiest projects; project details rank sessions and let you jump straight to them. Weekly and five-hour limits appear when Codex reports those windows.
 
-Quota is shared by a Codex account; project and session figures are recorded tokens, not an allocation of the account's percentage. Agent 0.30.0 starts collecting native usage notifications from managed sessions. Earlier history and standalone CLI activity are not backfilled. Missing or stale data is labeled explicitly. See [usage accounting](docs/usage.md) for coverage and counting rules.
+Quota is shared by a Codex account; project and session figures are recorded tokens, not an allocation of the account's percentage. Agent 0.30.1 starts collecting native usage notifications from managed sessions. Earlier history and standalone CLI activity are not backfilled. Missing or stale data is labeled explicitly. See [usage accounting](docs/usage.md) for coverage and counting rules.
 
 ## How it compares to Codex
 
