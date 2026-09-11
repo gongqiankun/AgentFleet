@@ -393,7 +393,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .usage-table td:first-child, .usage-table td:first-child button { font-family: var(--font); }
 .usage-table tbody tr:last-child td { border-bottom: 0; }
 .usage-table tbody tr:hover { background: var(--cobalt-soft); }
-.usage-table button { color: var(--cobalt); text-align: left; }
+.usage-table button { background: transparent; border: 0; color: var(--cobalt); cursor: pointer; padding: 0; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
+.usage-table button:hover, .usage-table button:focus-visible { text-decoration-color: currentColor; }
 .usage-table small { color: var(--muted); }
 .usage-table .usage-table-empty { color: var(--muted); padding-block: 28px; text-align: center; }
 .usage-footnote { color: var(--muted); font-size: var(--text-caption); line-height: 1.7; margin: 22px 0 0; }
