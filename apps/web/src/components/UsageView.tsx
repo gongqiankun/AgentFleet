@@ -6,6 +6,17 @@ import type { UsageBreakdownEntry, UsageSummary } from "../lib/usage";
 import { locale, t } from "../i18n";
 
 const cacheRate=(input:number|null|undefined,cached:number|null|undefined)=>input&&cached!=null?cached/input*100:null;
+const pageSize=10;
+type PageItem=number|"ellipsis";
+
+function pageItems(current:number,total:number):PageItem[] {
+  if(total<=7)return Array.from({length:total},(_,index)=>index+1);
+  const visible=new Set([1,total,current-1,current,current+1]);
+  if(current<=4)[2,3,4,5].forEach(page=>visible.add(page));
+  if(current>=total-3)[total-4,total-3,total-2,total-1].forEach(page=>visible.add(page));
+  const pages=[...visible].filter(page=>page>=1&&page<=total).sort((a,b)=>a-b);
+  return pages.flatMap((page,index)=>index&&page-pages[index-1]>1?["ellipsis",page]:[page]);
+}
 
 export function UsageView({machines,selectedId,onSelect,onSession}:{machines:Machine[];selectedId?:string;onSelect:(id:string)=>void;onSession:(id:string)=>void}) {
   const machine=machines.find(item=>item.id===selectedId)??machines[0];
@@ -13,15 +24,29 @@ export function UsageView({machines,selectedId,onSelect,onSession}:{machines:Mac
   const [loading,setLoading]=useState(false);
   const [failed,setFailed]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
+  const [projectPage,setProjectPage]=useState(1);
+  const [sessionPage,setSessionPage]=useState(1);
   const number=(value:number|null|undefined)=>value==null?"—":new Intl.NumberFormat(locale()).format(value);
   const percent=(value:number|null)=>value==null?t("未记录"):t("{0}%",new Intl.NumberFormat(locale(),{maximumFractionDigits:1}).format(value));
   const date=(value:string)=>new Date(value).toLocaleString(locale());
   const load=async(signal?:AbortSignal)=>{if(!machine)return;setLoading(true);try{setData(await api.usage("machine",machine.id,signal));setFailed(false);}catch(error){if(!(error instanceof DOMException&&error.name==="AbortError"))setFailed(true);}finally{if(!signal?.aborted)setLoading(false);}};
-  useEffect(()=>{setData(undefined);setFailed(false);const controller=new AbortController();void load(controller.signal);return()=>controller.abort();},[machine?.id]);
+  useEffect(()=>{setData(undefined);setFailed(false);setProjectPage(1);setSessionPage(1);const controller=new AbortController();void load(controller.signal);return()=>controller.abort();},[machine?.id]);
   async function refresh(){if(!machine)return;setRefreshing(true);try{await api.refreshQuota(machine.id);await load();}finally{setRefreshing(false);}}
   const weeklyRate=cacheRate(data?.quotaCycle?.inputTokens,data?.quotaCycle?.cachedInputTokens);
   const weekly=data?.accounts.flatMap(account=>account.windows.filter(window=>window.bucket==="codex"&&window.windowMinutes===10080).map(window=>({account,window})))??[];
-  const rows=(entries:UsageBreakdownEntry[]|undefined,session=false)=><div className="usage-table-wrap"><table className="usage-table"><thead><tr><th>{session?t("会话"):t("项目")}</th><th>{t("总消耗")}</th><th>{t("本周消耗")}</th><th>{t("周命中率")}</th></tr></thead><tbody>{entries?.length?entries.map(entry=><tr key={entry.id}><td>{session?<button type="button" onClick={()=>onSession(entry.id)}>{entry.title}</button>:entry.title}</td><td>{number(entry.totalTokens)} <small>tokens</small></td><td>{number(entry.weeklyTokens)} <small>tokens</small></td><td>{percent(cacheRate(entry.weeklyInputTokens,entry.weeklyCachedInputTokens))}</td></tr>):<tr><td colSpan={4} className="usage-table-empty">{loading?t("正在读取用量…"):t("尚无已记录用量")}</td></tr>}</tbody></table></div>;
+  const rows=(entries:UsageBreakdownEntry[]|undefined,session=false,page=1,setPage:(page:number)=>void=()=>{})=>{
+    const totalPages=Math.max(1,Math.ceil((entries?.length??0)/pageSize));
+    const safePage=Math.min(page,totalPages);
+    const visible=entries?.slice((safePage-1)*pageSize,safePage*pageSize);
+    return <>
+      <div className="usage-table-wrap"><table className="usage-table"><thead><tr><th>{session?t("会话"):t("项目")}</th><th>{t("总消耗")}</th><th>{t("本周消耗")}</th><th>{t("周命中率")}</th></tr></thead><tbody>{visible?.length?visible.map(entry=><tr key={entry.id}><td>{session?<button className="usage-table__name" title={entry.title} type="button" onClick={()=>onSession(entry.id)}>{entry.title}</button>:<span className="usage-table__name" title={entry.title}>{entry.title}</span>}</td><td>{number(entry.totalTokens)} <small>tokens</small></td><td>{number(entry.weeklyTokens)} <small>tokens</small></td><td>{percent(cacheRate(entry.weeklyInputTokens,entry.weeklyCachedInputTokens))}</td></tr>):<tr><td colSpan={4} className="usage-table-empty">{loading?t("正在读取用量…"):t("尚无已记录用量")}</td></tr>}</tbody></table></div>
+      {totalPages>1&&<nav className="usage-pagination" aria-label={session?t("会话分页"):t("项目分页")}>
+        <button type="button" disabled={safePage===1} onClick={()=>setPage(safePage-1)}>{t("上一页")}</button>
+        {pageItems(safePage,totalPages).map((item,index)=>item==="ellipsis"?<span key={`ellipsis-${index}`} aria-hidden="true">…</span>:<button key={item} type="button" aria-current={item===safePage?"page":undefined} aria-label={t("第 {0} 页",item)} onClick={()=>setPage(item)}>{item}</button>)}
+        <button type="button" disabled={safePage===totalPages} onClick={()=>setPage(safePage+1)}>{t("下一页")}</button>
+      </nav>}
+    </>;
+  };
   return <section className="wide-view usage-view">
     <div className="wide-view__heading"><div><h1>{t("消耗")}</h1><p>{t("查看本周额度、项目与会话的 token 消耗和缓存效率。")}</p></div><BarChart3 size={30}/></div>
     {!machine?<div className="usage-empty"><h2>{t("暂无主机")}</h2><p>{t("连接主机后，用量会在这里按项目和会话汇总。")}</p></div>:<>
@@ -33,8 +58,8 @@ export function UsageView({machines,selectedId,onSelect,onSession}:{machines:Mac
         <article><span>{t("本周消耗")}</span><strong>{number(data?.quotaCycle?.recordedTokens)}</strong><small>tokens{data?.quotaCycle?.boundaryIncomplete?" *":""}</small></article>
         <article><span>{t("周缓存命中率")}</span><strong>{percent(weeklyRate)}</strong><small>{t("缓存输入 ÷ 输入 token")}</small></article>
       </div>
-      <div className="usage-section-head"><div><h2>{t("项目消耗")}</h2><p>{t("按本周消耗从高到低排列")}</p></div></div>{rows(data?.projects)}
-      <div className="usage-section-head"><div><h2>{t("会话消耗")}</h2><p>{t("点击会话名称可直接进入")}</p></div></div>{rows(data?.sessions,true)}
+      <div className="usage-section-head"><div><h2>{t("项目消耗")}</h2><p>{t("按本周消耗从高到低排列")}</p></div></div>{rows(data?.projects,false,projectPage,setProjectPage)}
+      <div className="usage-section-head"><div><h2>{t("会话消耗")}</h2><p>{t("点击会话名称可直接进入")}</p></div></div>{rows(data?.sessions,true,sessionPage,setSessionPage)}
       <p className="usage-footnote">{t("本周按账号上报的周额度重置周期计算。旧记录缺少分项时，周命中率显示为未记录。")}</p>
     </>}
   </section>;

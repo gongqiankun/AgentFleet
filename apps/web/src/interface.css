@@ -385,18 +385,26 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .usage-section-head h2 { font-size: 1.15rem; margin: 0 0 5px; }
 .usage-section-head p { color: var(--muted); font-size: var(--text-caption); margin: 0; }
 .usage-table-wrap { border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
-.usage-table { border-collapse: collapse; min-width: 650px; width: 100%; }
+.usage-table { border-collapse: collapse; min-width: 650px; table-layout: fixed; width: 100%; }
 .usage-table th, .usage-table td { border-bottom: 1px solid var(--line); padding: 13px 16px; text-align: right; }
 .usage-table th:first-child, .usage-table td:first-child { text-align: left; width: 46%; }
+.usage-table td:first-child { max-width: 0; }
 .usage-table th { color: var(--muted); font-size: var(--text-caption); font-weight: 550; }
 .usage-table td { font-family: var(--mono); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
 .usage-table td:first-child, .usage-table td:first-child button { font-family: var(--font); }
 .usage-table tbody tr:last-child td { border-bottom: 0; }
 .usage-table tbody tr:hover { background: var(--cobalt-soft); }
+.usage-table__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 .usage-table button { background: transparent; border: 0; color: var(--cobalt); cursor: pointer; padding: 0; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
 .usage-table button:hover, .usage-table button:focus-visible { text-decoration-color: currentColor; }
 .usage-table small { color: var(--muted); }
 .usage-table .usage-table-empty { color: var(--muted); padding-block: 28px; text-align: center; }
+.usage-pagination { align-items: center; display: flex; gap: 6px; justify-content: flex-end; padding: 12px 2px 2px; }
+.usage-pagination button { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 8px; color: var(--muted); cursor: pointer; font: inherit; min-height: 34px; min-width: 34px; padding: 5px 10px; }
+.usage-pagination button:hover:not(:disabled), .usage-pagination button:focus-visible { border-color: var(--cobalt); color: var(--cobalt); }
+.usage-pagination button[aria-current="page"] { background: var(--cobalt); border-color: var(--cobalt); color: white; }
+.usage-pagination button:disabled { cursor: default; opacity: .45; }
+.usage-pagination span { color: var(--muted); min-width: 20px; text-align: center; }
 .usage-footnote { color: var(--muted); font-size: var(--text-caption); line-height: 1.7; margin: 22px 0 0; }
 .usage-error { color: var(--danger); }
 .usage-empty { padding: 48px 0; }

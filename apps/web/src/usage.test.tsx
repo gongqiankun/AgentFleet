@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { UsageButton } from "./components/UsageButton";
 import { UsageView } from "./components/UsageView";
 import { api } from "./lib/api";
@@ -85,4 +85,20 @@ it("shows a dedicated host usage page with weekly cache rates and opens sessions
  expect(screen.getAllByText("37.5%").length).toBeGreaterThanOrEqual(2);
  expect(screen.getByText("1,020")).toBeTruthy();
  fireEvent.click(screen.getByRole("button",{name:"Usage page"}));expect(select).toHaveBeenCalledWith("s1");
+});
+
+it("limits usage tables to ten rows and paginates projects and sessions independently",async()=>{
+ const entries=Array.from({length:12},(_,index)=>({id:`entry-${index+1}`,title:`A very long usage title ${index+1} that should stay on one line`,totalTokens:index+1,weeklyTokens:index+1,weeklyInputTokens:index+1,weeklyCachedInputTokens:0}));
+ vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine",projects:entries.map(entry=>({...entry,id:`project-${entry.id}`})),sessions:entries.map(entry=>({...entry,id:`session-${entry.id}`}))});
+ render(<UsageView machines={[{id:"m1",name:"Demo host"} as never]} selectedId="m1" onSelect={vi.fn()} onSession={vi.fn()}/>);
+ const projectPages=await screen.findByRole("navigation",{name:"项目分页"});
+ const sessionPages=screen.getByRole("navigation",{name:"会话分页"});
+ expect(screen.getAllByText("A very long usage title 10 that should stay on one line")).toHaveLength(2);
+ expect(screen.queryByText("A very long usage title 11 that should stay on one line")).toBeNull();
+ expect(screen.getAllByTitle("A very long usage title 1 that should stay on one line")[0].classList.contains("usage-table__name")).toBe(true);
+ fireEvent.click(within(sessionPages).getByRole("button",{name:"下一页"}));
+ expect(screen.getByRole("button",{name:"A very long usage title 11 that should stay on one line"})).toBeTruthy();
+ expect(screen.getByText("A very long usage title 1 that should stay on one line")).toBeTruthy();
+ fireEvent.click(within(projectPages).getByRole("button",{name:"第 2 页"}));
+ expect(screen.getAllByText("A very long usage title 11 that should stay on one line")).toHaveLength(2);
 });
