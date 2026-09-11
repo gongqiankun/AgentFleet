@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownMessage } from "./components/MarkdownMessage";
+
+afterEach(cleanup);
 
 describe("assistant Markdown", () => {
   it("renders headings, nested lists, GFM tables, tasks and links", () => {
@@ -29,5 +31,13 @@ describe("assistant Markdown", () => {
     view.rerender(<MarkdownMessage body={'```sh\nprintf "hello"\nprintf "world"\n```'} />);
     fireEvent.click(screen.getByRole("button",{name:/复制代码|Copy code/}));
     await waitFor(()=>expect(writeText).toHaveBeenLastCalledWith('printf "hello"\nprintf "world"\n'));
+  });
+  it("copies the complete assistant reply including prose and code", async () => {
+    const writeText=vi.fn().mockResolvedValue(undefined);Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText}});
+    const body='处理完成。\n\n```sh\nnpm test\n```';
+    const view=render(<MarkdownMessage body={body} />);
+    fireEvent.click(view.getByRole("button",{name:"复制回复"}));
+    await waitFor(()=>expect(writeText).toHaveBeenCalledWith(body));
+    expect(view.getByRole("button",{name:"回复已复制"})).toBeTruthy();
   });
 });

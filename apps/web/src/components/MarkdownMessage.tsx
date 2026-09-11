@@ -5,6 +5,23 @@ import { Copy, Check } from "lucide-react";
 import { t, useLocale } from "../i18n";
 import "./markdown-message.css";
 
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const temporary = document.createElement("textarea");
+  temporary.value = text;
+  temporary.setAttribute("readonly", "");
+  temporary.style.position = "fixed";
+  temporary.style.opacity = "0";
+  document.body.appendChild(temporary);
+  temporary.select();
+  const copied = document.execCommand("copy");
+  temporary.remove();
+  if (!copied) throw new Error("copy failed");
+}
+
 function CodeBlock({ children }: { children?: ReactNode }) {
   const code = Children.toArray(children).find(child => isValidElement(child));
   const props = isValidElement<{ children?: ReactNode; className?: string }>(code) ? code.props : {};
@@ -14,7 +31,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   const [failed, setFailed] = useState(false);
   const copied = copiedText === text;
   async function copy() {
-    try { await navigator.clipboard.writeText(text); setCopiedText(text); setFailed(false); }
+    try { await copyText(text); setCopiedText(text); setFailed(false); }
     catch { setFailed(true); }
   }
   return <div className="markdown-code">
@@ -34,5 +51,20 @@ const components: Components = {
 /** Parse assistant prose only; raw view and execution logs retain their original bytes. */
 export const MarkdownMessage = memo(function MarkdownMessage({ body }: { body: string }) {
   useLocale();
-  return <div className="message-markdown"><Markdown remarkPlugins={[remarkGfm]} components={components} skipHtml>{body}</Markdown></div>;
+  const [copiedText, setCopiedText] = useState<string>();
+  const [failed, setFailed] = useState(false);
+  const copied = copiedText === body;
+  async function copyReply() {
+    try { await copyText(body); setCopiedText(body); setFailed(false); }
+    catch { setFailed(true); }
+  }
+  return <div className="message-markdown">
+    <div className="message-markdown__body"><Markdown remarkPlugins={[remarkGfm]} components={components} skipHtml>{body}</Markdown></div>
+    <div className="message-markdown__actions">
+      <button type="button" onClick={() => void copyReply()} aria-label={copied ? t("回复已复制") : t("复制回复")}>
+        {copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("已复制") : t("复制回复")}
+      </button>
+      {failed && <span role="status">{t("复制失败，请手动选择回复内容。")}</span>}
+    </div>
+  </div>;
 });
