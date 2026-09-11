@@ -335,7 +335,7 @@ test("v7 enrollment schema upgrades with explicit credential recovery fields", (
   });
   assert.equal(
     Number((upgraded.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version),
-    27,
+    28,
   );
   const columns = upgraded.all<{ name: string }>("PRAGMA table_info(enrollment_transactions)").map((column) => column.name);
   assert.ok(columns.includes("credential_id"));
@@ -489,7 +489,7 @@ test("v4 through v8 migration freezes a Project with multiple legacy active Sess
   });
   assert.equal(
     Number((upgraded.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version),
-    27,
+    28,
   );
   const reservation = upgraded.get<{
     state: string;

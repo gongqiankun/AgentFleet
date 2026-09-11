@@ -373,6 +373,32 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
 .usage-dialog { padding: 0; }
 .usage-body { font-size: var(--text-small); padding: 24px; }
 .usage-totals dd { font-size: var(--text-body); font-weight: 400; }
+.usage-toolbar { align-items: end; display: flex; gap: 12px; justify-content: space-between; padding: 24px 0 18px; }
+.usage-toolbar label { display: grid; gap: 7px; min-width: min(360px, 100%); }
+.usage-toolbar label span { color: var(--muted); font-size: var(--text-caption); }
+.usage-toolbar select { min-height: 42px; }
+.usage-overview-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 4px 0 34px; }
+.usage-overview-cards article { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 8px; min-height: 132px; padding: 18px; }
+.usage-overview-cards span, .usage-overview-cards small { color: var(--muted); font-size: var(--text-caption); }
+.usage-overview-cards strong { color: var(--ink); font-family: var(--mono); font-size: 1.55rem; font-variant-numeric: tabular-nums; font-weight: 550; overflow-wrap: anywhere; }
+.usage-section-head { align-items: end; border-top: 1px solid var(--line); display: flex; justify-content: space-between; padding: 28px 0 13px; }
+.usage-section-head h2 { font-size: 1.15rem; margin: 0 0 5px; }
+.usage-section-head p { color: var(--muted); font-size: var(--text-caption); margin: 0; }
+.usage-table-wrap { border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
+.usage-table { border-collapse: collapse; min-width: 650px; width: 100%; }
+.usage-table th, .usage-table td { border-bottom: 1px solid var(--line); padding: 13px 16px; text-align: right; }
+.usage-table th:first-child, .usage-table td:first-child { text-align: left; width: 46%; }
+.usage-table th { color: var(--muted); font-size: var(--text-caption); font-weight: 550; }
+.usage-table td { font-family: var(--mono); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
+.usage-table td:first-child, .usage-table td:first-child button { font-family: var(--font); }
+.usage-table tbody tr:last-child td { border-bottom: 0; }
+.usage-table tbody tr:hover { background: var(--cobalt-soft); }
+.usage-table button { color: var(--cobalt); text-align: left; }
+.usage-table small { color: var(--muted); }
+.usage-table .usage-table-empty { color: var(--muted); padding-block: 28px; text-align: center; }
+.usage-footnote { color: var(--muted); font-size: var(--text-caption); line-height: 1.7; margin: 22px 0 0; }
+.usage-error { color: var(--danger); }
+.usage-empty { padding: 48px 0; }
 .activity-panel { border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); }
 .activity-panel__head { background: var(--paper); }
 .activity-tabs { gap: 4px; }
@@ -424,6 +450,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
   .composer-actions > .composer-keyboard-hint { flex-basis: 100%; }
 }
 @media (max-width: 900px) {
+  .usage-overview-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { grid-template-columns: 1fr auto; height: 64px; padding-inline: 20px; }
   .primary-nav { position: fixed; z-index: 25; inset: auto 16px calc(10px + env(safe-area-inset-bottom)); display: flex; justify-content: stretch; padding: 6px; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 6px 28px rgb(0 0 0 / .1); background: var(--paper); gap: 2px; }
   /* Fixed navigation must be relative to the viewport, not a blurred header. */
@@ -470,6 +497,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cobalt); }
   .activity-backdrop { padding: 16px; }
 }
 @media (max-width: 660px) {
+  .usage-toolbar { align-items: stretch; flex-direction: column; }
+  .usage-toolbar .button { justify-content: center; }
+  .usage-overview-cards { grid-template-columns: 1fr; }
+  .usage-overview-cards article { min-height: 112px; }
   .topbar { padding: env(safe-area-inset-top) 16px 0; height: calc(64px + env(safe-area-inset-top)); }
   .topbar .brand-lockup { font-size: 1.0625rem; gap: 8px; }
   .topbar-actions { gap: 2px; }

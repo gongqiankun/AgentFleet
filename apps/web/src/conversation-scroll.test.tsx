@@ -86,12 +86,12 @@ it("输入框或窗口高度变化时仅在跟随模式保持底部", () => {
 });
 it("命令日志独立跟随末尾，向上看旧输出时不被新输出打断", () => {
   const { rerender } = render(<CommandExecution output={"x".repeat(50)} />);
-  fireEvent.click(screen.getByRole("button", { name: "展开代码" }));
+  fireEvent.click(screen.getByRole("button", { name: "展开全部" }));
   const log = screen.getByRole("region", { name: "命令与输出内容" });
-  expect(log.scrollTop).toBe(300);
+  expect(log.scrollTop).toBe(log.scrollHeight - log.clientHeight);
   log.scrollTop = 100; fireEvent.scroll(log);
   rerender(<CommandExecution output={"x".repeat(60)} />);
   expect(log.scrollTop).toBe(100);
   fireEvent.click(screen.getByRole("button", { name: "新输出 ↓" }));
-  expect(log.scrollTop).toBe(400);
+  expect(log.scrollTop).toBe(log.scrollHeight - log.clientHeight);
 });

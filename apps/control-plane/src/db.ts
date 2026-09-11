@@ -798,7 +798,7 @@ export class ControlPlaneDatabase {
 
   private migrate(): void {
     const version = Number((this.sqlite.prepare("PRAGMA user_version").get() as { user_version: number }).user_version);
-    if (version > 27) throw new Error(`Database schema ${version} is newer than this binary`);
+    if (version > 28) throw new Error(`Database schema ${version} is newer than this binary`);
     let currentVersion = version;
     if (version < 1) {
       this.transaction(() => {
@@ -1106,6 +1106,12 @@ export class ControlPlaneDatabase {
         SELECT logical_session_id,day || 'T00:00:00.000Z',day || 'T23:59:59.999Z',total_tokens,'day'
         FROM usage_days WHERE NOT EXISTS(SELECT 1 FROM usage_intervals);
       PRAGMA user_version=27`);
+    });
+    if (version < 28) this.transaction(() => {
+      const columns=new Set(this.all<{name:string}>("PRAGMA table_info(usage_intervals)").map(column=>column.name));
+      if(!columns.has("input_tokens"))this.sqlite.exec("ALTER TABLE usage_intervals ADD COLUMN input_tokens INTEGER");
+      if(!columns.has("cached_input_tokens"))this.sqlite.exec("ALTER TABLE usage_intervals ADD COLUMN cached_input_tokens INTEGER");
+      this.sqlite.exec("PRAGMA user_version=28");
     });
   }
 

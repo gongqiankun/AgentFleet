@@ -9,7 +9,7 @@ import { ApiError } from "./lib/types";
 import type { Approval, Dashboard, FleetSession, SessionDetail } from "./lib/types";
 
 vi.mock("./lib/api", () => ({
-  api: { command: vi.fn(), commandReceipts: vi.fn(), permissions: vi.fn(), dashboard: vi.fn(), login: vi.fn(), clientSessions: vi.fn(), session: vi.fn(), projects: vi.fn(), sessions: vi.fn(), release: vi.fn(), hostOperations: vi.fn(), machineCodexPreferences: vi.fn() },
+  api: { command: vi.fn(), commandReceipts: vi.fn(), permissions: vi.fn(), dashboard: vi.fn(), login: vi.fn(), clientSessions: vi.fn(), session: vi.fn(), projects: vi.fn(), sessions: vi.fn(), release: vi.fn(), hostOperations: vi.fn(), machineCodexPreferences: vi.fn(), usage:vi.fn(), refreshQuota:vi.fn() },
   subscribeToFleet: vi.fn(() => () => undefined),
 }));
 
@@ -77,6 +77,7 @@ beforeEach(() => {
   vi.mocked(api.machineCodexPreferences).mockRejectedValue(new Error("未提供模型目录"));
   vi.mocked(api.projects).mockImplementation(async ({ machineId }) => ({ items: dashboard().machines.find((machine) => machine.id === machineId)?.projects ?? [], nextCursor: null }));
   vi.mocked(api.sessions).mockImplementation(async ({ projectId }) => ({ items: sessions.filter((session) => session.projectId === projectId), nextCursor: null }));
+  vi.mocked(api.usage).mockResolvedValue({scope:"machine",recorded:null,quotaCycle:null,observedSessions:0,totalSessions:0,firstObservedAt:null,lastObservedAt:null,coverage:"observed-only",discontinuities:0,last:null,nativeTotal:null,modelContextWindow:null,topWeeklyProjects:null,topWeeklySessions:null,topProjects:[],topSessions:[],accounts:[],projects:[],sessions:[]});
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.restoreAllMocks(); });
 
@@ -260,6 +261,9 @@ describe("会话工作区", () => {
     expect(location.pathname).toBe("/hosts/2");
     fireEvent.click(screen.getByRole("button", { name: /^主机1，/ }));
     expect(location.pathname).toBe("/hosts/1");
+    fireEvent.click(within(nav).getByRole("button", { name: "消耗" }));
+    expect(location.pathname).toBe("/usage/1");
+    expect(await screen.findByRole("heading", { name: "消耗" })).toBeTruthy();
     fireEvent.click(within(nav).getByRole("button", { name: "设置" }));
     expect(location.pathname).toBe("/settings");
     expect(await screen.findByRole("heading", { name: "设置" })).toBeTruthy();
@@ -268,12 +272,13 @@ describe("会话工作区", () => {
     history.replaceState(null, "", "/settings");
     render(<App />);
     await screen.findByRole("heading", { name: "设置" });
-    for (const path of ["/hosts/2", "/workbench/2", "/sessions/A", "/settings", "/hosts/2"]) {
+    for (const path of ["/hosts/2", "/workbench/2", "/sessions/A", "/usage/2", "/settings", "/hosts/2"]) {
       act(() => { history.replaceState(null, "", path); fireEvent.popState(window); });
       expect(location.pathname).toBe(path);
       if (path === "/hosts/2") expect((await screen.findByRole("button", { name: /^主机2，/ })).getAttribute("aria-pressed")).toBe("true");
       if (path === "/workbench/2") expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("主机2");
       if (path === "/sessions/A") await screen.findByRole("heading", { name: "会话A" });
+      if (path === "/usage/2") await screen.findByRole("heading", { name: "消耗" });
       if (path === "/settings") await screen.findByRole("heading", { name: "设置" });
     }
   });

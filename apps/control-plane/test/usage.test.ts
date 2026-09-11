@@ -63,9 +63,9 @@ test("shared account quota selects one newest snapshot without summing percentag
  service.quota("a",{...snapshot,accountKey:"unknown",observedAt:"2000-01-01T00:00:00Z"});
  assert.equal(service.read(workspaceId,"machine","a").accounts[0]?.stale,true);
 });
-test("usage routes require authentication and migration creates version 27",async t=>{
+test("usage routes require authentication and migration creates version 28",async t=>{
  const {app,db}=await buildControlPlane(config());t.after(()=>app.close());
- assert.equal(db.get<{user_version:number}>("PRAGMA user_version")?.user_version,27);
+ assert.equal(db.get<{user_version:number}>("PRAGMA user_version")?.user_version,28);
  for(const path of ["sessions","projects","machines"])assert.equal((await app.inject({method:"GET",url:`/api/${path}/missing/usage`})).statusCode,401);
 });
 
@@ -192,6 +192,11 @@ test("total and weekly rankings differ, exclude old usage, and follow reset adju
  assert.deepEqual(host.topWeeklyProjects?.map(p=>[p.id,p.totalTokens]),[["p-b",50],["p-a",20]]);
  assert.deepEqual(host.topWeeklySessions?.map(s=>s.id),["b1","a2"]);
  assert.equal(host.quotaCycle?.recordedTokens,70);
+ assert.equal(host.quotaCycle?.inputTokens,56);
+ assert.equal(host.quotaCycle?.cachedInputTokens,21);
+ assert.deepEqual(host.topWeeklyProjects?.map(p=>[p.id,p.inputTokens,p.cachedInputTokens]),[["p-b",40,15],["p-a",16,6]]);
+ assert.deepEqual(host.projects.map(p=>[p.id,p.totalTokens,p.weeklyTokens,p.weeklyInputTokens,p.weeklyCachedInputTokens]),[["p-b",50,50,40,15],["p-a",1020,20,16,6]]);
+ assert.deepEqual(host.sessions.map(s=>s.id),["b1","a2","a1"]);
  assert.equal(service.read(workspaceId,"session","a1").quotaCycle?.recordedTokens,0);
  assert.equal(service.read(workspaceId,"session","b2").quotaCycle?.recordedTokens,null);
  assert.deepEqual(service.read(workspaceId,"project","p-a").topWeeklySessions?.map(s=>s.id),["a2"]);

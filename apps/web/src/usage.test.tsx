@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { UsageButton } from "./components/UsageButton";
+import { UsageView } from "./components/UsageView";
 import { api } from "./lib/api";
 import type { UsageSummary } from "./lib/usage";
 import { setLocale } from "./i18n";
@@ -74,4 +75,14 @@ it("shows both quota windows and separate total and cycle project rankings",asyn
  expect(await screen.findByText("项目总消耗排名（前 10）")).toBeTruthy();
  expect(screen.getByText("项目本周消耗排名（前 10）")).toBeTruthy();
  expect(screen.getByText("Active project")).toBeTruthy();
+});
+
+it("shows a dedicated host usage page with weekly cache rates and opens sessions",async()=>{
+ const cycle={startsAt:"2026-09-04T00:00:00Z",resetsAt:"2026-09-11T00:00:00Z",recordedTokens:70,inputTokens:56,cachedInputTokens:21,boundaryIncomplete:false};
+ vi.mocked(api.usage).mockResolvedValue({...data,scope:"machine",quotaCycle:cycle,projects:[{id:"p1",title:"AgentFleets",totalTokens:1020,weeklyTokens:20,weeklyInputTokens:16,weeklyCachedInputTokens:6}],sessions:[{id:"s1",title:"Usage page",totalTokens:50,weeklyTokens:50,weeklyInputTokens:40,weeklyCachedInputTokens:15}]});
+ const select=vi.fn();render(<UsageView machines={[{id:"m1",name:"Demo host"} as never]} selectedId="m1" onSelect={vi.fn()} onSession={select}/>);
+ expect(await screen.findByRole("heading",{name:"消耗"})).toBeTruthy();
+ expect(screen.getAllByText("37.5%").length).toBeGreaterThanOrEqual(2);
+ expect(screen.getByText("1,020")).toBeTruthy();
+ fireEvent.click(screen.getByRole("button",{name:"Usage page"}));expect(select).toHaveBeenCalledWith("s1");
 });

@@ -11,12 +11,14 @@ import { count, t, locale, systemText, useLocale } from "./i18n";
 import { SessionConfiguration, type ConfigurationRequest } from "./components/SessionConfiguration";
 import { FleetStatus } from "./components/FleetStatus";
 import { SettingsView } from "./components/SettingsView";
+import { UsageView } from "./components/UsageView";
 import { NativeSessionDeletion } from "./components/NativeSessionDeletion";
 import { CommandRecovery } from "./components/CommandRecovery";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BarChart3,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -1036,7 +1038,7 @@ function App() {
   }, [navigate]);
 
   function setView(next: View) {
-    navigate({ view: next, ...(["fleet", "hosts"].includes(next) ? { machineId: selectedMachineId } : {}) });
+    navigate({ view: next, ...(["fleet", "hosts", "usage"].includes(next) ? { machineId: selectedMachineId } : {}) });
   }
 
   useEffect(() => {
@@ -1146,7 +1148,7 @@ function App() {
   useEffect(() => {
     // The collection URL selects a default once, then records its stable ID.
     // Explicit missing/deleted IDs stay visible instead of silently selecting another host.
-    if (dashboard && selectedMachineId && !route.machineId && !route.sessionId && ["fleet", "hosts"].includes(route.view) && /^\/(hosts|workbench)\/?$/.test(location.pathname)) {
+    if (dashboard && selectedMachineId && !route.machineId && !route.sessionId && ["fleet", "hosts", "usage"].includes(route.view) && /^\/(hosts|workbench|usage)\/?$/.test(location.pathname)) {
       navigate({ view: route.view, machineId: selectedMachineId }, true);
     }
   }, [dashboard, selectedMachineId, route, navigate]);
@@ -1303,6 +1305,7 @@ function App() {
           <button aria-current={view === "fleet" ? "page" : undefined} className={view === "fleet" ? "active" : ""} onClick={() => { setView("fleet"); }}><MonitorDot size={16} />{t("工作台")}</button>
           <button aria-current={view === "hosts" ? "page" : undefined} className={view === "hosts" ? "active" : ""} onClick={() => { setView("hosts"); }}><Server size={16} />{t("主机")}</button>
           {(dashboard.stats.approvals > 0 || view === "approvals") && <button aria-current={view === "approvals" ? "page" : undefined} className={view === "approvals" ? "active" : ""} onClick={() => { setView("approvals"); }}><KeyRound size={16} />{t("待处理")}{locale() === "en" ? " " : ""}{dashboard.stats.approvals > 0 && <span className="nav-count">{dashboard.stats.approvals}</span>}</button>}
+          <button aria-current={view === "usage" ? "page" : undefined} className={view === "usage" ? "active" : ""} onClick={() => { setView("usage"); }}><BarChart3 size={16} />{t("消耗")}</button>
           <button aria-current={view === "security" ? "page" : undefined} className={view === "security" ? "active" : ""} onClick={() => { setView("security"); }}><ShieldCheck size={16} />{t("设置")}</button>
         </nav>
         <WorldClocks side="right" />
@@ -1318,7 +1321,7 @@ function App() {
           </div>
         </main>
         <SessionInspector detail={displayedSession ? detail : undefined} loading={detailLoading} draftOwner={dashboard.user.id} onLoadHistory={() => void loadEarlierHistory()} historyLoading={historyLoading} onRefresh={() => void loadDetail(selectedSessionId)} onClaim={claimSession} onContinueManaged={continueInManagedSession} onReleaseManagement={releaseManagement} onSend={sendPrompt} onQueue={queuePrompt} onSteer={steerPrompt} onCancelQueued={cancelQueuedTurn} onCancel={cancelTurn} onApproval={decideApproval} onNewSession={() => { if (displayedSession) openCreate({ id: displayedSession.projectId, machineId: displayedSession.machineId, alias: displayedSession.projectAlias, pathHint: t("当前会话项目"), syncContent: true, retentionDays: 7 }); }} onClose={() => selectSession(undefined)} />
-      </div> : view === "hosts" ? <HostsView machines={dashboard.machines} selectedId={selectedMachineId} onSelect={selectMachine} onPair={() => setPairOpen(true)} onRemove={setRemoveMachine} onChanged={refreshAll} renderCompatibility={(machine) => <CompatibilityProfileCard machine={machine} profile={dashboard.compatibilityProfile} />} /> : view === "approvals" ? <ApprovalsView approvals={dashboard.pendingApprovals} onOpen={openApproval} onBack={() => setView("fleet")} /> : <SettingsView dashboard={dashboard} onUpdated={refreshAll} onToast={toast} />}
+      </div> : view === "hosts" ? <HostsView machines={dashboard.machines} selectedId={selectedMachineId} onSelect={selectMachine} onPair={() => setPairOpen(true)} onRemove={setRemoveMachine} onChanged={refreshAll} renderCompatibility={(machine) => <CompatibilityProfileCard machine={machine} profile={dashboard.compatibilityProfile} />} /> : view === "approvals" ? <ApprovalsView approvals={dashboard.pendingApprovals} onOpen={openApproval} onBack={() => setView("fleet")} /> : view === "usage" ? <UsageView machines={dashboard.machines} selectedId={selectedMachineId} onSelect={id=>navigate({view:"usage",machineId:id})} onSession={selectSession} /> : <SettingsView dashboard={dashboard} onUpdated={refreshAll} onToast={toast} />}
       <PairMachineDialog open={pairOpen} onClose={() => setPairOpen(false)} onPaired={(machineId) => { if (machineId) navigate({ view: "fleet", machineId }); void loadDashboard(); }} onToast={toast} />
       <RemoveMachineDialog machine={removeMachine} onClose={() => setRemoveMachine(undefined)} onRemoved={() => loadDashboard(true)} onToast={toast} />
       <CreateSessionDialog open={createOpen} machines={dashboard.machines} selectedMachineId={selectedMachineId} initialProject={createProject} onClose={() => setCreateOpen(false)} onToast={toast} onCreate={async (machineId, projectId, title) => { const result = await api.createSession(machineId, projectId, title); setSelectedMachineId(machineId); selectSession(result.session.id); toast("success", t("受管会话已创建")); await loadDashboard(true); }} />
