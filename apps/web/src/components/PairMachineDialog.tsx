@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
-import { enrollmentTicket, onboardCommand, type InstallPlatform } from "../lib/enrollment";
+import { enrollmentTicket, onboardCommand, uninstallCommand, type InstallPlatform } from "../lib/enrollment";
 import type { Enrollment, PairingPreview } from "../lib/types";
 import { ApiError } from "../lib/types";
 import { DiscoveryStatus } from "./DiscoveryStatus";
@@ -110,6 +110,9 @@ function FlowSteps({ copied, claimed, confirmed, ready }: { copied: boolean; cla
 
 export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToast }: PairMachineDialogProps) {
   const [mode, setMode] = useState<FlowMode>(initialCode ? "legacy" : "guided");
+  const [uninstallPlatform, setUninstallPlatform] = useState<InstallPlatform>("linux");
+  const [purgeAgent, setPurgeAgent] = useState(false);
+  const [uninstallCopied, setUninstallCopied] = useState(false);
   const [platform, setPlatform] = useState<InstallPlatform>("linux");
   const [enrollment, setEnrollment] = useState<Enrollment>();
   const [creating, setCreating] = useState(false);
@@ -518,6 +521,14 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
             )}
           </section>
         )}
+        <details className="pair-uninstall">
+          <summary>{t("卸载 AgentFleets 主机 Agent")}</summary>
+          <p>{t("在要卸载的主机上，使用安装 Agent 时的系统用户运行。请先结束任务并释放接管。")}</p>
+          <label>{t("卸载目标系统")}<select aria-label={t("卸载目标系统")} value={uninstallPlatform} onChange={event => { setUninstallPlatform(event.target.value as InstallPlatform); setUninstallCopied(false); }}><option value="linux">Linux</option><option value="macos">macOS</option><option value="windows">Windows PowerShell</option></select></label>
+          <label className="pair-verification-check"><input type="checkbox" checked={purgeAgent} onChange={event => { setPurgeAgent(event.target.checked); setUninstallCopied(false); }} /><span>{t("同时清除 Agent 本地身份与连接状态（重新连接需再次配对）")}</span></label>
+          <div className="uninstall-command"><code>{uninstallCommand(location.origin, uninstallPlatform, purgeAgent)}</code><button className="button button--quiet" type="button" onClick={async () => { try { await copyText(uninstallCommand(location.origin, uninstallPlatform, purgeAgent)); setUninstallCopied(true); } catch (error) { onToast("danger", errorMessage(error)); } }}><Copy size={15} />{uninstallCopied ? t("已复制") : t("复制卸载命令")}</button></div>
+          <p>{t("默认卸载 Agent 服务和程序，保留本地连接状态。不会删除 Codex 原生历史和项目文件，也不会卸载自行安装的 Codex。面板中的主机记录需另行移除。")}</p>
+        </details>
       </section>
     </div>
   );

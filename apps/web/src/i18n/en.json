@@ -1408,5 +1408,10 @@
   "雪": "Snow",
   "冻雨": "Freezing rain",
   "雨": "Rain",
-  "天气": "Weather"
+  "天气": "Weather",
+  "卸载 AgentFleets 主机 Agent": "Uninstall the AgentFleets host Agent",
+  "在要卸载的主机上，使用安装 Agent 时的系统用户运行。请先结束任务并释放接管。": "Run on the target host as the user who installed the Agent. Finish active tasks and release session control first.",
+  "卸载目标系统": "Uninstall target OS",
+  "同时清除 Agent 本地身份与连接状态（重新连接需再次配对）": "Also remove the Agent’s local identity and connection state (enrollment will be required to reconnect)",
+  "默认卸载 Agent 服务和程序，保留本地连接状态。不会删除 Codex 原生历史和项目文件，也不会卸载自行安装的 Codex。面板中的主机记录需另行移除。": "By default, removes the Agent service and program while keeping local connection state. Codex native history, project files, and independently installed Codex are preserved. Remove the host record from the panel separately."
 }

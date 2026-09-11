@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enrollmentTicket, onboardCommand } from "./enrollment";
+import { enrollmentTicket, onboardCommand, uninstallCommand } from "./enrollment";
 
 describe("browser initiated enrollment", () => {
   it("keeps the opaque secret out of the control plane URL", () => {
@@ -28,4 +28,14 @@ describe("browser initiated enrollment", () => {
     expect(windows).toContain("-Name $env:COMPUTERNAME");
     expect(windows).not.toContain("-Project");
   });
+});
+
+it("generates platform-specific uninstall commands without enrollment secrets and makes purge opt-in", () => {
+  for (const [platform, path] of [["linux", "/install"], ["macos", "/install-macos"], ["windows", "/install.ps1"]] as const) {
+    const command = uninstallCommand("https://fleet.example.com/pair?secret=hidden", platform);
+    expect(command).toContain(`https://fleet.example.com${path}'`);
+    expect(command).not.toMatch(/hidden|ticket|purge/i);
+    expect(command).toContain(platform === "windows" ? "-Mode Uninstall" : "--uninstall");
+    expect(uninstallCommand("https://fleet.example.com", platform, true)).toContain(platform === "windows" ? "-Purge" : "--purge");
+  }
 });

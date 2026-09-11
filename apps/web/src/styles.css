@@ -1198,3 +1198,9 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 
 .usage-trigger-text { display: flex; flex-direction: column; gap: 4px; text-align: left; }
 .usage-trigger-text small { font-size: var(--text-caption); font-weight: 400; line-height: 1.4; opacity: .75; }
+
+.pair-uninstall { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 14px; }
+.pair-uninstall summary { cursor: pointer; font-weight: 600; }
+.pair-uninstall p { color: var(--muted); font-size: var(--text-caption); line-height: 1.6; margin: 10px 0; }
+.pair-uninstall > label { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.pair-uninstall select { min-width: 0; max-width: 100%; }
