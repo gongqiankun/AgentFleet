@@ -42,7 +42,7 @@ it("keeps the purging uninstall command in the footer without a legacy pairing e
   render(<PairMachineDialog open onClose={vi.fn()} onPaired={vi.fn()} onToast={vi.fn()} />);
   const installCopy = await screen.findByRole("button", { name: "复制安装命令" });
   const uninstallCopy = screen.getByRole("button", { name: "复制卸载命令" });
-  const note = screen.getByText("主机卸载完成后，请在面板的主机页面手动删除该主机记录。");
+  const note = screen.getByText(/仅当你不再希望 AgentFleets 连接这台主机时.*卸载这台主机上的 AgentFleets Agent.*清除连接身份/);
   expect(installCopy.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(installCopy.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(note.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

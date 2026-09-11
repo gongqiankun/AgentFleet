@@ -1399,6 +1399,6 @@
   "雨": "Rain",
   "天气": "Weather",
   "卸载": "Uninstall",
-  "主机卸载完成后，请在面板的主机页面手动删除该主机记录。": "After uninstalling the host Agent, remove the host record manually from the Hosts page.",
+  "仅当你不再希望 AgentFleets 连接这台主机时，才运行下方卸载命令。它会卸载这台主机上的 AgentFleets Agent，并清除连接身份；完成后，请在面板的主机页面删除该主机记录。": "Run the uninstall command below only when you no longer want AgentFleets to connect to this host. It removes the AgentFleets Agent and its connection identity from the host. When it finishes, remove the host record from the Hosts page.",
   "主机卸载命令": "Host uninstall command"
 }

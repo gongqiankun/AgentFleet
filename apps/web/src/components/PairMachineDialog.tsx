@@ -443,7 +443,7 @@ export function PairMachineDialog({ open, onClose, onPaired, onToast }: PairMach
               </>
             ) : null}
             <div className="pair-uninstall-footer">
-              <p className="pair-uninstall-note">{t("主机卸载完成后，请在面板的主机页面手动删除该主机记录。")}</p>
+              <p className="pair-uninstall-note">{t("仅当你不再希望 AgentFleets 连接这台主机时，才运行下方卸载命令。它会卸载这台主机上的 AgentFleets Agent，并清除连接身份；完成后，请在面板的主机页面删除该主机记录。")}</p>
               <section className="connection-receipt connection-receipt--uninstall-command" aria-label={t("主机卸载命令")}>
                 <div className="receipt-command receipt-command--uninstall">
                   <span>{t("卸载")}</span>
