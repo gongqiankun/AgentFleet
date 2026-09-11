@@ -110,8 +110,6 @@ function FlowSteps({ copied, claimed, confirmed, ready }: { copied: boolean; cla
 
 export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToast }: PairMachineDialogProps) {
   const [mode, setMode] = useState<FlowMode>(initialCode ? "legacy" : "guided");
-  const [uninstallPlatform, setUninstallPlatform] = useState<InstallPlatform>("linux");
-  const [purgeAgent, setPurgeAgent] = useState(false);
   const [uninstallCopied, setUninstallCopied] = useState(false);
   const [platform, setPlatform] = useState<InstallPlatform>("linux");
   const [enrollment, setEnrollment] = useState<Enrollment>();
@@ -313,6 +311,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
     return enrollmentTicket(enrollment.id, enrollment.bootstrapSecret);
   }, [enrollment?.id, enrollment?.bootstrapSecret]);
   const command = useMemo(() => ticket ? onboardCommand(location.origin, ticket, platform) : "", [ticket, platform]);
+  const removeCommand = useMemo(() => uninstallCommand(location.origin, platform), [platform]);
   const claimed = enrollment?.status === "claimed" || enrollment?.status === "confirmed" || enrollment?.status === "redeemed";
   const browserConfirmed = enrollment?.status === "confirmed" || enrollment?.status === "redeemed";
   const ticketTimeElapsed = Boolean(
@@ -392,12 +391,12 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
             <FlowSteps copied={copied} claimed={claimed} confirmed={browserConfirmed} ready={enrollment?.discovery?.state === "ready"} />
             <div className="platform-tabs" role="tablist" aria-label={t("目标主机系统")}>
               {([['linux', 'Linux'], ['macos', 'macOS'], ['windows', 'Windows']] as const).map(([value, label]) => (
-                <button type="button" role="tab" aria-label={label} aria-selected={platform === value} tabIndex={platform === value ? 0 : -1} className={platform === value ? "platform-tab platform-tab--active" : "platform-tab"} key={value} disabled={claimed} onClick={() => { setPlatform(value); setCopied(false); }} onKeyDown={(event) => {
+                <button type="button" role="tab" aria-label={label} aria-selected={platform === value} tabIndex={platform === value ? 0 : -1} className={platform === value ? "platform-tab platform-tab--active" : "platform-tab"} key={value} disabled={claimed} onClick={() => { setPlatform(value); setCopied(false); setUninstallCopied(false); }} onKeyDown={(event) => {
                   const choices: InstallPlatform[] = ["linux", "macos", "windows"];
                   const index = choices.indexOf(value);
                   const next = event.key === "ArrowRight" ? (index + 1) % 3 : event.key === "ArrowLeft" ? (index + 2) % 3 : event.key === "Home" ? 0 : event.key === "End" ? 2 : undefined;
                   if (next === undefined) return;
-                  event.preventDefault(); setPlatform(choices[next]); setCopied(false);
+                  event.preventDefault(); setPlatform(choices[next]); setCopied(false); setUninstallCopied(false);
                   event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
                 }}><span>{label}</span><small>{platform === value ? <><Check size={13} aria-hidden="true" />{t("已选择")}</> : t("点击选择")}</small></button>
               ))}
@@ -422,7 +421,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                     <span className="receipt-expiry">{remainingLabel(enrollment.expiresAt, now)}</span>
                   </header>
                   <div className="receipt-command">
-                    <span aria-hidden="true">$</span>
+                    <span>{t("安装")}</span>
                     <code>{command}</code>
                     <button ref={copyButtonRef} type="button" className="receipt-copy" disabled={ticketTimeElapsed} onClick={async () => {
                       try {
@@ -434,6 +433,20 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                       }
                     }} aria-label={copied ? t("命令已复制") : t("复制安装命令")} aria-describedby="install-run-location">
                       {copied ? <Check size={15} /> : <Copy size={15} />}{copied ? t("已复制") : t("复制")}
+                    </button>
+                  </div>
+                  <div className="receipt-command receipt-command--uninstall">
+                    <span>{t("卸载")}</span>
+                    <code>{removeCommand}</code>
+                    <button type="button" className="receipt-copy" onClick={async () => {
+                      try {
+                        await copyText(removeCommand);
+                        setUninstallCopied(true);
+                      } catch (error) {
+                        onToast("danger", errorMessage(error));
+                      }
+                    }} aria-label={t("复制卸载命令")}>
+                      {uninstallCopied ? <Check size={15} /> : <Copy size={15} />}{uninstallCopied ? t("已复制") : t("复制")}
                     </button>
                   </div>
                   <div className="receipt-trace" aria-live="polite">
@@ -521,14 +534,6 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
             )}
           </section>
         )}
-        <details className="pair-uninstall">
-          <summary>{t("卸载 AgentFleets 主机 Agent")}</summary>
-          <p>{t("在要卸载的主机上，使用安装 Agent 时的系统用户运行。请先结束任务并释放接管。")}</p>
-          <label>{t("卸载目标系统")}<select aria-label={t("卸载目标系统")} value={uninstallPlatform} onChange={event => { setUninstallPlatform(event.target.value as InstallPlatform); setUninstallCopied(false); }}><option value="linux">Linux</option><option value="macos">macOS</option><option value="windows">Windows PowerShell</option></select></label>
-          <label className="pair-verification-check"><input type="checkbox" checked={purgeAgent} onChange={event => { setPurgeAgent(event.target.checked); setUninstallCopied(false); }} /><span>{t("同时清除 Agent 本地身份与连接状态（重新连接需再次配对）")}</span></label>
-          <div className="uninstall-command"><code>{uninstallCommand(location.origin, uninstallPlatform, purgeAgent)}</code><button className="button button--quiet" type="button" onClick={async () => { try { await copyText(uninstallCommand(location.origin, uninstallPlatform, purgeAgent)); setUninstallCopied(true); } catch (error) { onToast("danger", errorMessage(error)); } }}><Copy size={15} />{uninstallCopied ? t("已复制") : t("复制卸载命令")}</button></div>
-          <p>{t("默认卸载 Agent 服务和程序，保留本地连接状态。不会删除 Codex 原生历史和项目文件，也不会卸载自行安装的 Codex。面板中的主机记录需另行移除。")}</p>
-        </details>
       </section>
     </div>
   );

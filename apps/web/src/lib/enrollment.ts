@@ -33,12 +33,12 @@ export function onboardCommand(origin: string, ticket: string, platform: Install
 }
 
 /** Commands are copied for the installation owner to run on the target host. */
-export function uninstallCommand(origin: string, platform: InstallPlatform, purge = false): string {
+export function uninstallCommand(origin: string, platform: InstallPlatform): string {
   const base = new URL(origin).origin;
   if (platform === "windows") return [
     "$i=Join-Path $env:TEMP 'agentfleet-install.ps1'",
     `Invoke-WebRequest ${powershellQuote(`${base}/install.ps1`)} -OutFile $i`,
-    `& $i -Mode Uninstall${purge ? " -Purge" : ""}`,
+    "& $i -Mode Uninstall -Purge",
   ].join("; ");
-  return `curl -fsSL ${shellQuote(`${base}/${platform === "macos" ? "install-macos" : "install"}`)} | sh -s -- --uninstall${purge ? " --purge" : ""}`;
+  return `curl -fsSL ${shellQuote(`${base}/${platform === "macos" ? "install-macos" : "install"}`)} | sh -s -- --uninstall --purge`;
 }

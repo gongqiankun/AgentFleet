@@ -960,8 +960,9 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .terminal-lights i:last-child { background: var(--teal); }
 .receipt-expiry { color: var(--muted); font-family: var(--mono); font-size: var(--text-caption); }
 .receipt-command { align-items: start; border-bottom: 1px solid var(--line); display: grid; gap: 9px; grid-template-columns: auto minmax(0, 1fr) auto; padding: 15px 13px; }
-.receipt-command > span { color: var(--teal); font-family: var(--mono); font-size: var(--text-caption); padding-top: 3px; }
-.receipt-command > code { color: var(--ink); font-size: var(--text-caption); line-height: 1.65; overflow-wrap: anywhere; user-select: all; }
+.receipt-command > span { color: var(--teal); font-family: var(--mono); font-size: var(--text-caption); min-width: 29px; padding-top: 3px; }
+.receipt-command > code { color: var(--ink); font-size: var(--text-caption); line-height: 1.65; min-width: 0; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; user-select: all; white-space: nowrap; }
+.receipt-command--uninstall > span { color: var(--red); }
 .receipt-copy { align-items: center; align-self: center; background: var(--paper-solid); border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink); display: inline-flex; font-size: var(--text-caption); gap: 5px; min-height: 29px; padding: 5px 8px; }
 .receipt-copy:hover { background: var(--paper-solid); border-color: var(--line-strong); }
 .receipt-copy:focus-visible { box-shadow: 0 0 0 3px rgba(119,157,255,.38); }
@@ -1106,8 +1107,6 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
   .pair-step { gap: 6px; }
   .pair-step small { display: none; }
   .pair-step:not(:last-child)::after { right: 7px; width: calc(100% - 92px); }
-  .receipt-command { grid-template-columns: auto minmax(0, 1fr); }
-  .receipt-copy { grid-column: 2; justify-self: start; }
   .receipt-line { grid-template-columns: 13px 75px minmax(0, 1fr); }
   .receipt-line strong { font-size: var(--text-caption); }
   .pair-create-error, .pair-expired { grid-template-columns: auto 1fr; }
@@ -1198,9 +1197,3 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 
 .usage-trigger-text { display: flex; flex-direction: column; gap: 4px; text-align: left; }
 .usage-trigger-text small { font-size: var(--text-caption); font-weight: 400; line-height: 1.4; opacity: .75; }
-
-.pair-uninstall { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 14px; }
-.pair-uninstall summary { cursor: pointer; font-weight: 600; }
-.pair-uninstall p { color: var(--muted); font-size: var(--text-caption); line-height: 1.6; margin: 10px 0; }
-.pair-uninstall > label { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-.pair-uninstall select { min-width: 0; max-width: 100%; }

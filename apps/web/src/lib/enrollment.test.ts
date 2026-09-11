@@ -30,12 +30,12 @@ describe("browser initiated enrollment", () => {
   });
 });
 
-it("generates platform-specific uninstall commands without enrollment secrets and makes purge opt-in", () => {
+it("generates platform-specific purging uninstall commands without enrollment secrets", () => {
   for (const [platform, path] of [["linux", "/install"], ["macos", "/install-macos"], ["windows", "/install.ps1"]] as const) {
     const command = uninstallCommand("https://fleet.example.com/pair?secret=hidden", platform);
     expect(command).toContain(`https://fleet.example.com${path}'`);
-    expect(command).not.toMatch(/hidden|ticket|purge/i);
+    expect(command).not.toMatch(/hidden|ticket/i);
     expect(command).toContain(platform === "windows" ? "-Mode Uninstall" : "--uninstall");
-    expect(uninstallCommand("https://fleet.example.com", platform, true)).toContain(platform === "windows" ? "-Purge" : "--purge");
+    expect(command).toContain(platform === "windows" ? "-Purge" : "--purge");
   }
 });

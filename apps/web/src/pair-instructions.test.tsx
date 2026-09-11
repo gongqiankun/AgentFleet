@@ -33,17 +33,18 @@ it("三个系统的复制命令说明具体运行位置，并随系统选择切�
   expect(screen.getByText(/Mac 上打开「终端」/)).toBeTruthy();
 });
 
-it("copies the selected uninstall command with explicit optional state cleanup", async () => {
+it("shows a purging uninstall command directly below install for the selected system", async () => {
   const enrollment = { id: "enroll_test", bootstrapSecret: "test-only", status: "pending" as const, expiresAt: "2099-01-01T00:00:00Z" };
   vi.mocked(api.createEnrollment).mockResolvedValue({ enrollment });
   vi.mocked(api.enrollment).mockResolvedValue({ enrollment });
   const copy = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", { value: { writeText: copy }, configurable: true });
   render(<PairMachineDialog open onClose={vi.fn()} onPaired={vi.fn()} onToast={vi.fn()} />);
-  await screen.findByRole("button", { name: "复制安装命令" });
-  fireEvent.click(screen.getByText("卸载 AgentFleets 主机 Agent"));
-  fireEvent.change(screen.getByRole("combobox", { name: "卸载目标系统" }), { target: { value: "windows" } });
-  fireEvent.click(screen.getByRole("checkbox", { name: /同时清除 Agent 本地身份/ }));
+  const installCopy = await screen.findByRole("button", { name: "复制安装命令" });
+  const uninstallCopy = screen.getByRole("button", { name: "复制卸载命令" });
+  expect(installCopy.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "卸载目标系统" })).toBeNull();
+  fireEvent.click(screen.getByRole("tab", { name: "Windows" }));
   fireEvent.click(screen.getByRole("button", { name: "复制卸载命令" }));
   expect(copy).toHaveBeenCalledWith(expect.stringContaining("-Mode Uninstall -Purge"));
   expect(copy.mock.calls[0][0]).not.toContain("test-only");
