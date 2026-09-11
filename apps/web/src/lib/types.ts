@@ -1,3 +1,5 @@
+import type { TokenCounts } from "./usage";
+
 export type MachineIdentity = "paired" | "revoked";
 export type MachineReachability = "connecting" | "live" | "reconciling" | "unreachable";
 export type MachineCompatibility = "compatible" | "degraded_read_only" | "incompatible" | "unknown";
@@ -178,9 +180,11 @@ export interface TimelineEvent {
   output?: string | null;
   diff?: { additions: number; deletions: number; files: number } | null;
   /** Native cumulative and latest-request counters carried by a usage event. */
-  nativeUsage?: { totalTokens: number; lastTokens: number };
+  nativeUsage?: { total: TokenCounts; last: TokenCounts };
   /** Per-turn total derived from native cumulative counter increments. */
   turnTokens?: number | null;
+  /** Per-turn cached input divided by input tokens. */
+  turnCacheHitRate?: number | null;
 }
 
 export interface Approval {

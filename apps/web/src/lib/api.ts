@@ -1,4 +1,4 @@
-import type { UsageSummary } from "./usage";
+import type { TokenCounts, UsageSummary } from "./usage";
 import { t } from "../i18n";
 import type {
   Approval,
@@ -372,13 +372,26 @@ export function mapEvent(rawValue: unknown): TimelineEvent {
       ? "agent"
       : "system";
   const diffText = string(payload.diff, string(payload.finalDiff));
-  const reportedUsageTotal = record(record(payload.usage).total).totalTokens;
-  const reportedUsageLast = record(record(payload.usage).last).totalTokens;
-  const nativeUsage = type === "thread.usage"
-    && Number.isSafeInteger(reportedUsageTotal) && Number(reportedUsageTotal) >= 0
-    && Number.isSafeInteger(reportedUsageLast) && Number(reportedUsageLast) >= 0
-    && Number(reportedUsageLast) <= Number(reportedUsageTotal)
-    ? { totalTokens: Number(reportedUsageTotal), lastTokens: Number(reportedUsageLast) }
+  const usageCounts = (value: unknown): TokenCounts | undefined => {
+    const source = record(value);
+    const counts = {
+      inputTokens: source.inputTokens,
+      outputTokens: source.outputTokens,
+      cachedInputTokens: source.cachedInputTokens,
+      reasoningOutputTokens: source.reasoningOutputTokens,
+      totalTokens: source.totalTokens,
+    };
+    if (!Object.values(counts).every((count) => Number.isSafeInteger(count) && Number(count) >= 0)) return undefined;
+    const normalized = Object.fromEntries(Object.entries(counts).map(([key, count]) => [key, Number(count)])) as unknown as TokenCounts;
+    if (normalized.cachedInputTokens > normalized.inputTokens) return undefined;
+    return normalized;
+  };
+  const reportedUsageTotal = usageCounts(record(payload.usage).total);
+  const reportedUsageLast = usageCounts(record(payload.usage).last);
+  const usageKeys: (keyof TokenCounts)[] = ["inputTokens", "outputTokens", "cachedInputTokens", "reasoningOutputTokens", "totalTokens"];
+  const nativeUsage = type === "thread.usage" && reportedUsageTotal && reportedUsageLast
+    && usageKeys.every((key) => reportedUsageLast[key] <= reportedUsageTotal[key])
+    ? { total: reportedUsageTotal, last: reportedUsageLast }
     : undefined;
   return {
     id: string(raw.eventId, `${integer(raw.sessionSeq)}-${type}`),

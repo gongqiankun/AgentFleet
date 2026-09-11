@@ -32,11 +32,24 @@ it("API 保留原生身份以合并真实 started/completed 图文事件", () =>
 });
 it("把同一原生轮次的用量附加到 Turn 完成，并隐藏独立用量事件", () => {
   const completed = mapEvent({ eventId: "completed", type: "turn.completed", sessionSeq: 12, nativeThreadId: "thread", nativeTurnId: "turn", payload: { turn: { id: "turn", status: "completed" } } });
-  const usage = (id: string, sessionSeq: number, totalTokens: number, lastTokens: number) => mapEvent({ eventId: id, type: "thread.usage", sessionSeq, nativeThreadId: "thread", nativeTurnId: "turn", payload: { usage: {
-    total: { inputTokens: totalTokens, outputTokens: 0, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens },
-    last: { inputTokens: lastTokens, outputTokens: 0, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens: lastTokens },
+  const usage = (id: string, sessionSeq: number, totalTokens: number, lastTokens: number, inputTokens: number, lastInputTokens: number, cachedInputTokens: number, lastCachedInputTokens: number) => mapEvent({ eventId: id, type: "thread.usage", sessionSeq, nativeThreadId: "thread", nativeTurnId: "turn", payload: { usage: {
+    total: { inputTokens, outputTokens: totalTokens - inputTokens, cachedInputTokens, reasoningOutputTokens: 0, totalTokens },
+    last: { inputTokens: lastInputTokens, outputTokens: lastTokens - lastInputTokens, cachedInputTokens: lastCachedInputTokens, reasoningOutputTokens: 0, totalTokens: lastTokens },
   } } });
-  expect(timelineItems([completed, usage("first", 10, 1000, 100), usage("second", 11, 1050, 50), usage("duplicate", 13, 1050, 50)]))
-    .toEqual([expect.objectContaining({ id: "completed", turnTokens: 150 })]);
-  expect(timelineItems([completed])[0]).toMatchObject({ id: "completed", turnTokens: null });
+  expect(timelineItems([completed, usage("first", 10, 1000, 100, 800, 80, 600, 60), usage("second", 11, 1050, 50, 840, 40, 630, 30), usage("duplicate", 13, 1050, 50, 840, 40, 630, 30)]))
+    .toEqual([expect.objectContaining({ id: "completed", turnTokens: 150, turnCacheHitRate: 75 })]);
+  expect(timelineItems([completed])[0]).toMatchObject({ id: "completed", turnTokens: null, turnCacheHitRate: null });
+});
+it("累计计数器重置时采用原生末次请求，零输入不虚构缓存命中率", () => {
+  const completed = mapEvent({ eventId: "completed", type: "turn.completed", sessionSeq: 3, nativeThreadId: "thread", nativeTurnId: "turn", payload: { turn: { id: "turn", status: "completed" } } });
+  const first = mapEvent({ eventId: "first", type: "thread.usage", sessionSeq: 1, nativeThreadId: "thread", nativeTurnId: "turn", payload: { usage: {
+    total: { inputTokens: 90, outputTokens: 10, cachedInputTokens: 45, reasoningOutputTokens: 0, totalTokens: 100 },
+    last: { inputTokens: 90, outputTokens: 10, cachedInputTokens: 45, reasoningOutputTokens: 0, totalTokens: 100 },
+  } } });
+  const reset = mapEvent({ eventId: "reset", type: "thread.usage", sessionSeq: 2, nativeThreadId: "thread", nativeTurnId: "turn", payload: { usage: {
+    total: { inputTokens: 0, outputTokens: 10, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens: 10 },
+    last: { inputTokens: 0, outputTokens: 10, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens: 10 },
+  } } });
+  expect(timelineItems([first, reset, completed])[0]).toMatchObject({ turnTokens: 110, turnCacheHitRate: 50 });
+  expect(timelineItems([reset, completed])[0]).toMatchObject({ turnTokens: 10, turnCacheHitRate: null });
 });

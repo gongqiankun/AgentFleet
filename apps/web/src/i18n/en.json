@@ -883,6 +883,8 @@
   "Turn 完成": "Turn completed",
   "本轮消耗 {0} tokens": "This turn: {0} tokens",
   "本轮 token 未记录": "Turn tokens not recorded",
+  "缓存命中率 {0}%": "Cache hit rate: {0}%",
+  "缓存命中率未记录": "Cache hit rate not recorded",
   "Turn 失败": "Turn failed",
   "Turn 已取消": "Turn canceled",
   "Codex 错误": "Codex error",
