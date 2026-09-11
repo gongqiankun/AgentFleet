@@ -30,3 +30,13 @@ it("API 保留原生身份以合并真实 started/completed 图文事件", () =>
   expect(timelineItems(events)).toHaveLength(1);
   expect(timelineItems(events)[0]).toMatchObject({ nativeItemId: "native-item", images: [png], body: "这是什么图片" });
 });
+it("把同一原生轮次的用量附加到 Turn 完成，并隐藏独立用量事件", () => {
+  const completed = mapEvent({ eventId: "completed", type: "turn.completed", sessionSeq: 12, nativeThreadId: "thread", nativeTurnId: "turn", payload: { turn: { id: "turn", status: "completed" } } });
+  const usage = (id: string, sessionSeq: number, totalTokens: number, lastTokens: number) => mapEvent({ eventId: id, type: "thread.usage", sessionSeq, nativeThreadId: "thread", nativeTurnId: "turn", payload: { usage: {
+    total: { inputTokens: totalTokens, outputTokens: 0, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens },
+    last: { inputTokens: lastTokens, outputTokens: 0, cachedInputTokens: 0, reasoningOutputTokens: 0, totalTokens: lastTokens },
+  } } });
+  expect(timelineItems([completed, usage("first", 10, 1000, 100), usage("second", 11, 1050, 50), usage("duplicate", 13, 1050, 50)]))
+    .toEqual([expect.objectContaining({ id: "completed", turnTokens: 150 })]);
+  expect(timelineItems([completed])[0]).toMatchObject({ id: "completed", turnTokens: null });
+});

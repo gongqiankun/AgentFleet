@@ -4,9 +4,30 @@ import type { TimelineEvent } from "./types";
 export function timelineItems(events: TimelineEvent[]): TimelineEvent[] {
   const result: TimelineEvent[] = [];
   const positions = new Map<string, number>();
+  const usageByTurn = new Map<string, number>();
+  const cumulativeByScope = new Map<string, number>();
+  for (const event of [...events].sort((left, right) => left.sessionSeq - right.sessionSeq)) {
+    if (event.type !== "thread.usage" || !event.nativeUsage || !event.nativeTurnId) continue;
+    const scope = event.nativeThreadId || event.executionSegmentId;
+    if (!scope) continue;
+    const previousTotal = cumulativeByScope.get(scope);
+    const increment = previousTotal === undefined || event.nativeUsage.totalTokens < previousTotal
+      ? event.nativeUsage.lastTokens
+      : event.nativeUsage.totalTokens - previousTotal;
+    cumulativeByScope.set(scope, event.nativeUsage.totalTokens);
+    if (increment > 0) {
+      const key = JSON.stringify([scope, event.nativeTurnId]);
+      usageByTurn.set(key, (usageByTurn.get(key) ?? 0) + increment);
+    }
+  }
   for (const event of events) {
     if (event.type === "thread.usage") continue;
     const scope = event.nativeThreadId || event.executionSegmentId;
+    if (event.type === "turn.completed") {
+      const usage = scope && event.nativeTurnId ? usageByTurn.get(JSON.stringify([scope, event.nativeTurnId])) : undefined;
+      result.push({ ...event, turnTokens: usage ?? null });
+      continue;
+    }
     if (!["item.started", "item.completed"].includes(event.type) || !scope || !event.nativeTurnId || !event.nativeItemId) {
       result.push(event);
       continue;

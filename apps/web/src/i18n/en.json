@@ -881,6 +881,8 @@
   "受管 Thread 已创建": "Managed thread created",
   "Turn 开始": "Turn started",
   "Turn 完成": "Turn completed",
+  "本轮消耗 {0} tokens": "This turn: {0} tokens",
+  "本轮 token 未记录": "Turn tokens not recorded",
   "Turn 失败": "Turn failed",
   "Turn 已取消": "Turn canceled",
   "Codex 错误": "Codex error",

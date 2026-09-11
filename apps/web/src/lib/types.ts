@@ -177,6 +177,10 @@ export interface TimelineEvent {
   command?: string | null;
   output?: string | null;
   diff?: { additions: number; deletions: number; files: number } | null;
+  /** Native cumulative and latest-request counters carried by a usage event. */
+  nativeUsage?: { totalTokens: number; lastTokens: number };
+  /** Per-turn total derived from native cumulative counter increments. */
+  turnTokens?: number | null;
 }
 
 export interface Approval {

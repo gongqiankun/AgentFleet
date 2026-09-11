@@ -372,6 +372,14 @@ export function mapEvent(rawValue: unknown): TimelineEvent {
       ? "agent"
       : "system";
   const diffText = string(payload.diff, string(payload.finalDiff));
+  const reportedUsageTotal = record(record(payload.usage).total).totalTokens;
+  const reportedUsageLast = record(record(payload.usage).last).totalTokens;
+  const nativeUsage = type === "thread.usage"
+    && Number.isSafeInteger(reportedUsageTotal) && Number(reportedUsageTotal) >= 0
+    && Number.isSafeInteger(reportedUsageLast) && Number(reportedUsageLast) >= 0
+    && Number(reportedUsageLast) <= Number(reportedUsageTotal)
+    ? { totalTokens: Number(reportedUsageTotal), lastTokens: Number(reportedUsageLast) }
+    : undefined;
   return {
     id: string(raw.eventId, `${integer(raw.sessionSeq)}-${type}`),
     nativeThreadId: string(raw.nativeThreadId) || undefined,
@@ -390,6 +398,7 @@ export function mapEvent(rawValue: unknown): TimelineEvent {
     command: itemType === "commandExecution" ? string(item.command) || null : null,
     output: itemType === "commandExecution" ? string(item.aggregatedOutput) || null : null,
     diff: diffSummary(diffText),
+    nativeUsage,
   };
 }
 

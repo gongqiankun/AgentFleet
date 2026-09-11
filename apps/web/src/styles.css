@@ -742,6 +742,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .timeline-event--user .timeline-event__node { border-color: var(--teal); color: var(--teal); }
 .timeline-event__head { align-items: baseline; display: flex; justify-content: space-between; gap: 8px; }
 .timeline-event__head strong { font-size: var(--text-caption); overflow-wrap: anywhere; }
+.timeline-event__turn-tokens { color: var(--muted); font-family: var(--mono); font-weight: 500; }
 .timeline-event__head time { color: var(--faint); font-family: var(--mono); font-size: var(--text-caption); }
 .timeline-event p { color: var(--ink); font-size: var(--text-small); line-height: 1.75; margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .deleted-copy { color: var(--faint) !important; font-style: italic; }
