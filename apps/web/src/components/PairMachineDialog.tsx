@@ -451,24 +451,6 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                   </div>
                 </section>
 
-                <p className="pair-uninstall-note">{t("主机卸载完成后，请在面板的主机页面手动删除该主机记录。")}</p>
-                <section className="connection-receipt connection-receipt--uninstall-command" aria-label={t("主机卸载命令")}>
-                  <div className="receipt-command receipt-command--uninstall">
-                    <span>{t("卸载")}</span>
-                    <code>{removeCommand}</code>
-                    <button type="button" className="receipt-copy" onClick={async () => {
-                      try {
-                        await copyText(removeCommand);
-                        setUninstallCopied(true);
-                      } catch (error) {
-                        onToast("danger", errorMessage(error));
-                      }
-                    }} aria-label={t("复制卸载命令")}>
-                      {uninstallCopied ? <Check size={15} /> : <Copy size={15} />}{uninstallCopied ? t("已复制") : t("复制")}
-                    </button>
-                  </div>
-                </section>
-
                 <div className="pair-download-note">
                   <ShieldCheck size={15} />
                   <span>{t("安装器会校验发布文件；也可")}<a href="/downloads/manifest.json" target="_blank" rel="noreferrer">{t("手动下载并核对 SHA-256")}</a>。</span>
@@ -515,6 +497,25 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
               setEnrollment(undefined);
               creationRef.current = undefined;
             }}>{t("已经从旧版终端获得配对码？")}</button>
+            <div className="pair-uninstall-footer">
+              <p className="pair-uninstall-note">{t("主机卸载完成后，请在面板的主机页面手动删除该主机记录。")}</p>
+              <section className="connection-receipt connection-receipt--uninstall-command" aria-label={t("主机卸载命令")}>
+                <div className="receipt-command receipt-command--uninstall">
+                  <span>{t("卸载")}</span>
+                  <code>{removeCommand}</code>
+                  <button type="button" className="receipt-copy" onClick={async () => {
+                    try {
+                      await copyText(removeCommand);
+                      setUninstallCopied(true);
+                    } catch (error) {
+                      onToast("danger", errorMessage(error));
+                    }
+                  }} aria-label={t("复制卸载命令")}>
+                    {uninstallCopied ? <Check size={15} /> : <Copy size={15} />}{uninstallCopied ? t("已复制") : t("复制")}
+                  </button>
+                </div>
+              </section>
+            </div>
           </>
         ) : (
           <section className="legacy-pairing">
