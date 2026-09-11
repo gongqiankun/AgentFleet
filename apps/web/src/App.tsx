@@ -78,7 +78,6 @@ import { CodexCommandGuide } from "./components/CodexCommandGuide";
 import { sessionPath, useSessionDraft } from "./lib/session-workspace";
 import { useAutoSizeTextarea } from "./lib/auto-size-textarea";
 import { routeFromPath, routePath, type AppRoute, type View } from "./lib/navigation";
-import { readPairingLink, removePairingCode } from "./lib/pairing-link";
 import type {
   Approval,
   CodexCompatibilityProfile,
@@ -979,7 +978,6 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem(CATALOG_COLLAPSED_KEY, String(catalogCollapsed)); } catch { /* Layout still works when browser storage is unavailable. */ }
   }, [catalogCollapsed]);
-  const [pairingLink] = useState(() => readPairingLink(location.pathname, location.search));
   const [dashboard, setDashboard] = useState<Dashboard>();
   const [authKnown, setAuthKnown] = useState(false);
   const [route, setRoute] = useState(() => routeFromPath(location.pathname));
@@ -990,8 +988,7 @@ function App() {
   const [detail, setDetail] = useState<SessionDetail>();
   const [detailLoading, setDetailLoading] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [pairOpen, setPairOpen] = useState(() => pairingLink.code !== undefined);
-  const [pairInitialCode, setPairInitialCode] = useState(pairingLink.code);
+  const [pairOpen, setPairOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createProject, setCreateProject] = useState<Project>();
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -1048,12 +1045,6 @@ function App() {
     window.addEventListener("popstate", pop);
     return () => window.removeEventListener("popstate", pop);
   }, [applyRoute]);
-
-  useEffect(() => {
-    if (pairingLink.hadCodeParameter) {
-      history.replaceState(history.state, "", removePairingCode(location.href));
-    }
-  }, [pairingLink]);
 
   const toast = useCallback((tone: Toast["tone"], message: string) => {
     const id = crypto.randomUUID();
@@ -1318,7 +1309,7 @@ function App() {
         <div className="topbar-actions"><LanguageSwitcher compact /><span className="account-label">{dashboard.user.displayName}</span><IconButton label={t("退出登录")} onClick={async () => { await api.logout(); setDashboard(undefined); setConnected(false); }}><LogOut size={16} /></IconButton></div>
       </header>
       {view === "fleet" ? <div className={`fleet-layout${catalogCollapsed ? " fleet-layout--catalog-collapsed" : ""}`}>
-        <MachineRail machines={dashboard.machines} sessions={dashboard.activitySessions ?? dashboard.sessions} connected={connected} selectedId={selectedMachineId} onSession={selectSession} onHost={id => navigate({ view: "hosts", machineId: id })} onSelect={selectMachine} onPair={() => { setPairInitialCode(undefined); setPairOpen(true); }} />
+        <MachineRail machines={dashboard.machines} sessions={dashboard.activitySessions ?? dashboard.sessions} connected={connected} selectedId={selectedMachineId} onSession={selectSession} onHost={id => navigate({ view: "hosts", machineId: id })} onSelect={selectMachine} onPair={() => setPairOpen(true)} />
         <main className="fleet-main">
           <div className="catalog-toggle-bar"><button type="button" className="catalog-toggle" aria-label={catalogCollapsed ? t("展开项目与会话") : t("收起项目与会话")} title={catalogCollapsed ? t("展开项目与会话") : t("收起项目与会话，让对话更宽")} aria-expanded={!catalogCollapsed} aria-controls="workbench-catalog" onClick={() => setCatalogCollapsed((value) => !value)}>{catalogCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}<span>{catalogCollapsed ? t("展开") : t("收起列表")}</span></button></div>
           <div id="workbench-catalog" className="fleet-catalog-content" role="region" aria-label={t("项目与会话列表")} tabIndex={0}>
@@ -1327,8 +1318,8 @@ function App() {
           </div>
         </main>
         <SessionInspector detail={displayedSession ? detail : undefined} loading={detailLoading} draftOwner={dashboard.user.id} onLoadHistory={() => void loadEarlierHistory()} historyLoading={historyLoading} onRefresh={() => void loadDetail(selectedSessionId)} onClaim={claimSession} onContinueManaged={continueInManagedSession} onReleaseManagement={releaseManagement} onSend={sendPrompt} onQueue={queuePrompt} onSteer={steerPrompt} onCancelQueued={cancelQueuedTurn} onCancel={cancelTurn} onApproval={decideApproval} onNewSession={() => { if (displayedSession) openCreate({ id: displayedSession.projectId, machineId: displayedSession.machineId, alias: displayedSession.projectAlias, pathHint: t("当前会话项目"), syncContent: true, retentionDays: 7 }); }} onClose={() => selectSession(undefined)} />
-      </div> : view === "hosts" ? <HostsView machines={dashboard.machines} selectedId={selectedMachineId} onSelect={selectMachine} onPair={() => { setPairInitialCode(undefined); setPairOpen(true); }} onRemove={setRemoveMachine} onChanged={refreshAll} renderCompatibility={(machine) => <CompatibilityProfileCard machine={machine} profile={dashboard.compatibilityProfile} />} /> : view === "approvals" ? <ApprovalsView approvals={dashboard.pendingApprovals} onOpen={openApproval} onBack={() => setView("fleet")} /> : <SettingsView dashboard={dashboard} onUpdated={refreshAll} onToast={toast} />}
-      <PairMachineDialog open={pairOpen} initialCode={pairInitialCode} onClose={() => { setPairOpen(false); setPairInitialCode(undefined); }} onPaired={(machineId) => { if (machineId) navigate({ view: "fleet", machineId }); void loadDashboard(); }} onToast={toast} />
+      </div> : view === "hosts" ? <HostsView machines={dashboard.machines} selectedId={selectedMachineId} onSelect={selectMachine} onPair={() => setPairOpen(true)} onRemove={setRemoveMachine} onChanged={refreshAll} renderCompatibility={(machine) => <CompatibilityProfileCard machine={machine} profile={dashboard.compatibilityProfile} />} /> : view === "approvals" ? <ApprovalsView approvals={dashboard.pendingApprovals} onOpen={openApproval} onBack={() => setView("fleet")} /> : <SettingsView dashboard={dashboard} onUpdated={refreshAll} onToast={toast} />}
+      <PairMachineDialog open={pairOpen} onClose={() => setPairOpen(false)} onPaired={(machineId) => { if (machineId) navigate({ view: "fleet", machineId }); void loadDashboard(); }} onToast={toast} />
       <RemoveMachineDialog machine={removeMachine} onClose={() => setRemoveMachine(undefined)} onRemoved={() => loadDashboard(true)} onToast={toast} />
       <CreateSessionDialog open={createOpen} machines={dashboard.machines} selectedMachineId={selectedMachineId} initialProject={createProject} onClose={() => setCreateOpen(false)} onToast={toast} onCreate={async (machineId, projectId, title) => { const result = await api.createSession(machineId, projectId, title); setSelectedMachineId(machineId); selectSession(result.session.id); toast("success", t("受管会话已创建")); await loadDashboard(true); }} />
       <div className="toast-stack" aria-live="polite">{toasts.map((item) => <div className={`toast toast--${item.tone}`} key={item.id}>{item.tone === "success" ? <Check size={16} /> : item.tone === "danger" ? <OctagonX size={16} /> : <CircleDot size={16} />}<span>{systemText(item.message)}</span></div>)}</div>

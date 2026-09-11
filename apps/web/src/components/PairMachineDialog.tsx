@@ -12,15 +12,14 @@ import {
   TerminalSquare,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { enrollmentTicket, onboardCommand, uninstallCommand, type InstallPlatform } from "../lib/enrollment";
-import type { Enrollment, PairingPreview } from "../lib/types";
+import type { Enrollment } from "../lib/types";
 import { ApiError } from "../lib/types";
 import { DiscoveryStatus } from "./DiscoveryStatus";
 
 type ToastTone = "info" | "success" | "danger";
-type FlowMode = "guided" | "legacy";
 const runInstructions: Record<InstallPlatform, string> = localized(() => ({
   linux: t("在要连接的 Linux 主机上打开终端（远程服务器先通过 SSH 登录），粘贴命令并按回车。"),
   macos: t("在要连接的 Mac 上打开「终端」（应用程序 → 实用工具），粘贴命令并按回车。"),
@@ -29,7 +28,6 @@ const runInstructions: Record<InstallPlatform, string> = localized(() => ({
 
 interface PairMachineDialogProps {
   open: boolean;
-  initialCode?: string;
   onClose: () => void;
   onPaired: (machineId?: string) => void;
   onToast: (tone: ToastTone, message: string) => void;
@@ -108,8 +106,7 @@ function FlowSteps({ copied, claimed, confirmed, ready }: { copied: boolean; cla
   );
 }
 
-export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToast }: PairMachineDialogProps) {
-  const [mode, setMode] = useState<FlowMode>(initialCode ? "legacy" : "guided");
+export function PairMachineDialog({ open, onClose, onPaired, onToast }: PairMachineDialogProps) {
   const [uninstallCopied, setUninstallCopied] = useState(false);
   const [platform, setPlatform] = useState<InstallPlatform>("linux");
   const [enrollment, setEnrollment] = useState<Enrollment>();
@@ -119,10 +116,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
   const [pollRevision, setPollRevision] = useState(0);
   const [copied, setCopied] = useState(false);
   const [alias, setAlias] = useState("");
-  const [verificationChecked, setVerificationChecked] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<PairingPreview>();
   const [busy, setBusy] = useState(false);
   const openRef = useRef(open);
   const creationRef = useRef<ReturnType<typeof api.createEnrollment> | undefined>(undefined);
@@ -157,10 +151,8 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
   }, [open]);
 
   async function beginEnrollment(force = false) {
-    setMode("guided");
     setCopied(false);
     setAlias("");
-    setVerificationChecked(false);
     setCreateError("");
     setPollError("");
     setCreating(true);
@@ -205,19 +197,10 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
     if (!open) {
       creationRef.current = undefined;
       setEnrollment(undefined);
-      setPreview(undefined);
-      setCode("");
-      return;
-    }
-    setCode(initialCode ?? "");
-    setPreview(undefined);
-    setVerificationChecked(false);
-    if (initialCode) {
-      setMode("legacy");
       return;
     }
     void beginEnrollment();
-  }, [open, initialCode]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -270,7 +253,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
   }, [open, enrollment?.id, enrollment?.status, enrollment?.expiresAt]);
 
   useEffect(() => {
-    if (!open || mode !== "guided" || !enrollment?.id || !shouldPollEnrollment(enrollment)) return;
+    if (!open || !enrollment?.id || !shouldPollEnrollment(enrollment)) return;
     let cancelled = false;
     let timer: number | undefined;
     let failures = 0;
@@ -304,7 +287,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
       activeController?.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [open, mode, enrollment?.id, enrollment?.status, enrollment?.expiresAt, enrollment?.machineReady, pollRevision]);
+  }, [open, enrollment?.id, enrollment?.status, enrollment?.expiresAt, enrollment?.machineReady, pollRevision]);
 
   const ticket = useMemo(() => {
     if (!enrollment?.id || !enrollment.bootstrapSecret) return "";
@@ -343,34 +326,6 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
 
   if (!open) return null;
 
-  async function lookup(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    try {
-      const result = await api.pairingPreview(code.replace(/\s/g, "").toUpperCase());
-      setPreview(result.pairing);
-    } catch (error) {
-      onToast("danger", errorMessage(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function confirmLegacy() {
-    if (!preview) return;
-    setBusy(true);
-    try {
-      await api.confirmPairing(preview.id, preview.verificationPhrase);
-      onToast("success", t("{0} 已安全配对", preview.machineName));
-      onPaired();
-      onClose();
-    } catch (error) {
-      onToast("danger", errorMessage(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const guidedExpired = enrollment?.status === "expired" || enrollment?.status === "cancelled";
   const verificationReady = (enrollment?.status === "claimed" || enrollment?.status === "confirmed") && Boolean(enrollment.verificationPhrase && enrollment.fingerprint);
 
@@ -386,8 +341,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
           <button className="icon-button" aria-label={t("关闭")} title={t("关闭")} onClick={onClose} disabled={busy} type="button"><X size={18} /></button>
         </div>
 
-        {mode === "guided" ? (
-          <>
+        <>
             <FlowSteps copied={copied} claimed={claimed} confirmed={browserConfirmed} ready={enrollment?.discovery?.state === "ready"} />
             <div className="platform-tabs" role="tablist" aria-label={t("目标主机系统")}>
               {([['linux', 'Linux'], ['macos', 'macOS'], ['windows', 'Windows']] as const).map(([value, label]) => (
@@ -488,15 +442,6 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                 )}
               </>
             ) : null}
-            <button className="pair-legacy-link" type="button" onClick={() => {
-              const current = enrollmentRef.current;
-              if (current?.id && ["pending", "claimed", "confirmed"].includes(current.status)) {
-                void api.cancelEnrollment(current.id).catch(() => undefined);
-              }
-              setMode("legacy");
-              setEnrollment(undefined);
-              creationRef.current = undefined;
-            }}>{t("已经从旧版终端获得配对码？")}</button>
             <div className="pair-uninstall-footer">
               <p className="pair-uninstall-note">{t("主机卸载完成后，请在面板的主机页面手动删除该主机记录。")}</p>
               <section className="connection-receipt connection-receipt--uninstall-command" aria-label={t("主机卸载命令")}>
@@ -516,29 +461,7 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                 </div>
               </section>
             </div>
-          </>
-        ) : (
-          <section className="legacy-pairing">
-            <button className="pair-back-link" type="button" onClick={() => void beginEnrollment(true)}><ArrowRight size={14} />{t("使用一条命令自动连接")}</button>
-            {!preview ? (
-              <>
-                <div className="terminal-instruction"><TerminalSquare size={19} /><div><span>{t("旧版 Local Agent")}</span><code>agentfleet pair --url {location.origin} --name "$(hostname)"</code></div></div>
-                <form className="pair-code-form" onSubmit={lookup}>
-                  <label><span>{t("终端显示的用户码")}</span><input value={code} onChange={(event) => setCode(event.target.value)} placeholder="ABCD-EFGH" autoComplete="one-time-code" maxLength={9} spellCheck={false} autoFocus required /></label>
-                  <button className="button button--primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={16} /> : <ArrowRight size={16} />}{locale() === "en" ? " " : ""}{t("核对主机")}</button>
-                </form>
-                <p className="modal-note">{t("用户码只用于兼容旧版连接流程，不能单独成为机器凭证。")}</p>
-              </>
-            ) : (
-              <>
-                <div className="pair-machine"><span className="pair-machine__icon"><Server size={21} /></span><div><span>{t("待配对主机")}</span><strong>{preview.machineName}</strong><small>{preview.os} · {preview.arch}</small></div></div>
-                <div className="verify-block"><span>{t("两端必须显示完全相同的校验短语")}</span><strong>{preview.verificationPhrase}</strong><code>{preview.fingerprint}</code></div>
-                <label className="confirm-check"><input type="checkbox" checked={verificationChecked} onChange={(event) => setVerificationChecked(event.target.checked)} /><span>{t("我已在主机终端逐字核对校验短语和公钥指纹")}</span></label>
-                <div className="modal-actions"><button className="button button--quiet" type="button" onClick={() => { setPreview(undefined); setVerificationChecked(false); }}>{t("返回")}</button><button className="button button--primary" type="button" disabled={busy || !verificationChecked} onClick={() => void confirmLegacy()}><ShieldCheck size={16} />{t("确认配对")}</button></div>
-              </>
-            )}
-          </section>
-        )}
+        </>
       </section>
     </div>
   );

@@ -9,7 +9,6 @@ import type {
   EnrollmentStatus,
   FleetSession,
   Machine,
-  PairingPreview,
   Project,
   SessionDetail,
   TimelineEvent,
@@ -456,21 +455,6 @@ function mapApproval(rawValue: unknown, sessions: FleetSession[], machines: Mach
   };
 }
 
-function mapPairing(rawValue: unknown): PairingPreview {
-  const raw = record(rawValue);
-  const machine = record(raw.machine);
-  return {
-    id: string(raw.pairingId),
-    userCode: string(raw.userCode),
-    machineName: string(machine.name, t("未命名主机")),
-    os: [string(machine.platform), string(machine.platformRelease)].filter(Boolean).join(" ") || t("未上报系统"),
-    arch: string(machine.architecture, "unknown"),
-    fingerprint: string(raw.publicKeyFingerprint),
-    verificationPhrase: string(raw.verificationPhrase),
-    expiresAt: string(raw.expiresAt),
-  };
-}
-
 export function mapEnrollment(rawValue: unknown): Enrollment {
   const envelope = record(rawValue);
   const raw = Object.keys(record(envelope.enrollment)).length > 0 ? record(envelope.enrollment) : envelope;
@@ -816,16 +800,6 @@ export const api = {
         scope: "once",
         clientMutationId: crypto.randomUUID(),
       }),
-    });
-  },
-  async pairingPreview(userCode: string) {
-    const raw = await request<JsonObject>(`/api/pairings/preview?userCode=${encodeURIComponent(userCode)}`);
-    return { pairing: mapPairing(raw) };
-  },
-  confirmPairing(id: string, verificationPhrase: string) {
-    return request<JsonObject>(`/api/pairings/${encodeURIComponent(id)}/confirm`, {
-      method: "POST",
-      body: JSON.stringify({ verificationPhrase }),
     });
   },
   async createEnrollment() {

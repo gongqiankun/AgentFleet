@@ -253,17 +253,6 @@ export interface QueuedTurn {
   mine: boolean;
 }
 
-export interface PairingPreview {
-  id: string;
-  userCode: string;
-  machineName: string;
-  os: string;
-  arch: string;
-  fingerprint: string;
-  verificationPhrase: string;
-  expiresAt: string;
-}
-
 export type EnrollmentStatus = "pending" | "claimed" | "confirmed" | "redeemed" | "expired" | "cancelled";
 
 export interface Enrollment {

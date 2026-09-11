@@ -33,7 +33,7 @@ it("三个系统的复制命令说明具体运行位置，并随系统选择切�
   expect(screen.getByText(/Mac 上打开「终端」/)).toBeTruthy();
 });
 
-it("shows a purging uninstall command directly below install for the selected system", async () => {
+it("keeps the purging uninstall command in the footer without a legacy pairing entry", async () => {
   const enrollment = { id: "enroll_test", bootstrapSecret: "test-only", status: "pending" as const, expiresAt: "2099-01-01T00:00:00Z" };
   vi.mocked(api.createEnrollment).mockResolvedValue({ enrollment });
   vi.mocked(api.enrollment).mockResolvedValue({ enrollment });
@@ -47,6 +47,7 @@ it("shows a purging uninstall command directly below install for the selected sy
   expect(installCopy.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(note.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(installCopy.closest(".connection-receipt")).not.toBe(uninstallCopy.closest(".connection-receipt"));
+  expect(screen.queryByText("已经从旧版终端获得配对码？")).toBeNull();
   expect(screen.queryByRole("combobox", { name: "卸载目标系统" })).toBeNull();
   fireEvent.click(screen.getByRole("tab", { name: "Windows" }));
   fireEvent.click(screen.getByRole("button", { name: "复制卸载命令" }));
