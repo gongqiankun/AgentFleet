@@ -435,20 +435,6 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                       {copied ? <Check size={15} /> : <Copy size={15} />}{copied ? t("已复制") : t("复制")}
                     </button>
                   </div>
-                  <div className="receipt-command receipt-command--uninstall">
-                    <span>{t("卸载")}</span>
-                    <code>{removeCommand}</code>
-                    <button type="button" className="receipt-copy" onClick={async () => {
-                      try {
-                        await copyText(removeCommand);
-                        setUninstallCopied(true);
-                      } catch (error) {
-                        onToast("danger", errorMessage(error));
-                      }
-                    }} aria-label={t("复制卸载命令")}>
-                      {uninstallCopied ? <Check size={15} /> : <Copy size={15} />}{uninstallCopied ? t("已复制") : t("复制")}
-                    </button>
-                  </div>
                   <div className="receipt-trace" aria-live="polite">
                     <div className={`receipt-line ${copied || claimed ? "receipt-line--done" : "receipt-line--active"}`}>
                       {copied || claimed ? <Check size={13} /> : <TerminalSquare size={13} />}
@@ -462,6 +448,24 @@ export function PairMachineDialog({ open, initialCode, onClose, onPaired, onToas
                       {claimed ? <Check size={13} /> : <span className="receipt-node" />}
                       <span>{t("Codex 主机")}</span><strong>{claimed ? enrollment.machineName ?? t("已识别主机") : t("自动识别运行账号与 Codex 环境")}</strong>
                     </div>
+                  </div>
+                </section>
+
+                <p className="pair-uninstall-note">{t("主机卸载完成后，请在面板的主机页面手动删除该主机记录。")}</p>
+                <section className="connection-receipt connection-receipt--uninstall-command" aria-label={t("主机卸载命令")}>
+                  <div className="receipt-command receipt-command--uninstall">
+                    <span>{t("卸载")}</span>
+                    <code>{removeCommand}</code>
+                    <button type="button" className="receipt-copy" onClick={async () => {
+                      try {
+                        await copyText(removeCommand);
+                        setUninstallCopied(true);
+                      } catch (error) {
+                        onToast("danger", errorMessage(error));
+                      }
+                    }} aria-label={t("复制卸载命令")}>
+                      {uninstallCopied ? <Check size={15} /> : <Copy size={15} />}{uninstallCopied ? t("已复制") : t("复制")}
+                    </button>
                   </div>
                 </section>
 

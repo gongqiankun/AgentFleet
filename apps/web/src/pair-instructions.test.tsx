@@ -42,7 +42,11 @@ it("shows a purging uninstall command directly below install for the selected sy
   render(<PairMachineDialog open onClose={vi.fn()} onPaired={vi.fn()} onToast={vi.fn()} />);
   const installCopy = await screen.findByRole("button", { name: "复制安装命令" });
   const uninstallCopy = screen.getByRole("button", { name: "复制卸载命令" });
+  const note = screen.getByText("主机卸载完成后，请在面板的主机页面手动删除该主机记录。");
   expect(installCopy.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(installCopy.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(note.compareDocumentPosition(uninstallCopy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(installCopy.closest(".connection-receipt")).not.toBe(uninstallCopy.closest(".connection-receipt"));
   expect(screen.queryByRole("combobox", { name: "卸载目标系统" })).toBeNull();
   fireEvent.click(screen.getByRole("tab", { name: "Windows" }));
   fireEvent.click(screen.getByRole("button", { name: "复制卸载命令" }));

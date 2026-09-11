@@ -1409,5 +1409,7 @@
   "冻雨": "Freezing rain",
   "雨": "Rain",
   "天气": "Weather",
-  "卸载": "Uninstall"
+  "卸载": "Uninstall",
+  "主机卸载完成后，请在面板的主机页面手动删除该主机记录。": "After uninstalling the host Agent, remove the host record manually from the Hosts page.",
+  "主机卸载命令": "Host uninstall command"
 }

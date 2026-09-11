@@ -963,6 +963,9 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .receipt-command > span { color: var(--teal); font-family: var(--mono); font-size: var(--text-caption); min-width: 29px; padding-top: 3px; }
 .receipt-command > code { color: var(--ink); font-size: var(--text-caption); line-height: 1.65; min-width: 0; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; user-select: all; white-space: nowrap; }
 .receipt-command--uninstall > span { color: var(--red); }
+.connection-receipt--uninstall-command { box-shadow: none; }
+.connection-receipt--uninstall-command .receipt-command { border-bottom: 0; }
+.pair-uninstall-note { color: var(--muted); font-size: var(--text-caption); line-height: 1.55; margin: 14px 3px 9px; }
 .receipt-copy { align-items: center; align-self: center; background: var(--paper-solid); border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink); display: inline-flex; font-size: var(--text-caption); gap: 5px; min-height: 29px; padding: 5px 8px; }
 .receipt-copy:hover { background: var(--paper-solid); border-color: var(--line-strong); }
 .receipt-copy:focus-visible { box-shadow: 0 0 0 3px rgba(119,157,255,.38); }
